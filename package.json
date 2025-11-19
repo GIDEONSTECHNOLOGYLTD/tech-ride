@@ -1,0 +1,19 @@
+{
+  "name": "ride-hailing-platform",
+  "version": "1.0.0",
+  "description": "Modern ride-hailing platform to compete with Bolt",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:admin\" \"npm run dev:mobile\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:admin": "cd admin-dashboard && npm run dev",
+    "dev:mobile": "cd mobile-app && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../admin-dashboard && npm install && cd ../mobile-app && npm install"
+  },
+  "keywords": ["ride-hailing", "taxi", "transportation"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

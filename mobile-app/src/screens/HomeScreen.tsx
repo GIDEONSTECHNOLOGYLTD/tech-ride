@@ -1,0 +1,218 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Dimensions } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
+
+export default function HomeScreen() {
+  const navigation = useNavigation();
+  const mapRef = useRef<MapView>(null);
+  const [location, setLocation] = useState<any>(null);
+  const [nearbyDrivers, setNearbyDrivers] = useState<any[]>([]);
+
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  const requestLocationPermission = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      
+      // Simulate nearby drivers
+      setNearbyDrivers([
+        { id: 1, latitude: currentLocation.coords.latitude + 0.002, longitude: currentLocation.coords.longitude + 0.002 },
+        { id: 2, latitude: currentLocation.coords.latitude - 0.003, longitude: currentLocation.coords.longitude + 0.001 },
+        { id: 3, latitude: currentLocation.coords.latitude + 0.001, longitude: currentLocation.coords.longitude - 0.003 },
+      ]);
+    }
+  };
+
+  const handleRequestRide = () => {
+    navigation.navigate('RideRequest' as never);
+  };
+
+  return (
+    <View style={styles.container}>
+      {location && (
+        <MapView
+          ref={mapRef}
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={location}
+          showsUserLocation
+          showsMyLocationButton
+        >
+          {nearbyDrivers.map((driver) => (
+            <Marker
+              key={driver.id}
+              coordinate={{ latitude: driver.latitude, longitude: driver.longitude }}
+              title="Driver"
+            >
+              <View style={styles.driverMarker}>
+                <Text style={styles.driverIcon}>🚗</Text>
+              </View>
+            </Marker>
+          ))}
+        </MapView>
+      )}
+
+      {/* Top Menu */}
+      <View style={styles.topMenu}>
+        <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Profile' as never)}>
+          <Ionicons name="person-circle" size={32} color="#4F46E5" />
+        </TouchableOpacity>
+        <View style={styles.topMenuRight}>
+          <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Wallet' as never)}>
+            <Ionicons name="wallet" size={24} color="#4F46E5" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('RideHistory' as never)}>
+            <Ionicons name="time" size={24} color="#4F46E5" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Bottom Action Panel */}
+      <View style={styles.bottomPanel}>
+        <Text style={styles.panelTitle}>Where to?</Text>
+        <TouchableOpacity style={styles.destinationInput} onPress={handleRequestRide}>
+          <Ionicons name="search" size={20} color="#9CA3AF" />
+          <Text style={styles.destinationText}>Enter your destination</Text>
+        </TouchableOpacity>
+
+        <View style={styles.quickActions}>
+          <TouchableOpacity style={styles.quickAction}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="home" size={20} color="#4F46E5" />
+            </View>
+            <Text style={styles.quickActionText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="briefcase" size={20} color="#4F46E5" />
+            </View>
+            <Text style={styles.quickActionText}>Work</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="time" size={20} color="#4F46E5" />
+            </View>
+            <Text style={styles.quickActionText}>Schedule</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    width,
+    height,
+  },
+  topMenu: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+  topMenuRight: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  menuButton: {
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  bottomPanel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  panelTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#1F2937',
+  },
+  destinationInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  destinationText: {
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  quickAction: {
+    alignItems: 'center',
+  },
+  quickActionIcon: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 12,
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickActionText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  driverMarker: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  driverIcon: {
+    fontSize: 24,
+  },
+});
