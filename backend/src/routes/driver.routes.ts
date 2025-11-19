@@ -1,13 +1,33 @@
 import express from 'express';
-import { authenticate, authorizeRole } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import {
+  registerDriver,
+  getDriverProfile,
+  updateDriverStatus,
+  updateLocation,
+  getEarnings,
+  getDriverStats,
+  updateBankDetails,
+  requestPayout,
+  getRideHistory,
+} from '../controllers/driver.controller';
 
 const router = express.Router();
 router.use(authenticate);
-router.use(authorizeRole('DRIVER'));
 
-// Placeholder routes - implement controllers as needed
-router.post('/register', (req, res) => res.json({ message: 'Register as driver' }));
-router.get('/earnings', (req, res) => res.json({ message: 'Get driver earnings' }));
-router.get('/stats', (req, res) => res.json({ message: 'Get driver stats' }));
+// Registration (before becoming driver)
+router.post('/register', registerDriver);
+
+// Driver-only routes
+router.use(authorize(['DRIVER']));
+
+router.get('/profile', getDriverProfile);
+router.put('/status', updateDriverStatus);
+router.put('/location', updateLocation);
+router.get('/earnings', getEarnings);
+router.get('/stats', getDriverStats);
+router.put('/bank-details', updateBankDetails);
+router.post('/payout', requestPayout);
+router.get('/rides', getRideHistory);
 
 export default router;

@@ -28,7 +28,7 @@ router.post(
     body('dropoffLatitude').isFloat(),
     body('dropoffLongitude').isFloat(),
     body('vehicleType').isIn(['ECONOMY', 'COMFORT', 'XL', 'BIKE']),
-    body('paymentMethod').isIn(['WALLET', 'CASH', 'PAYSTACK', 'CRYPTO']),
+    body('paymentMethod').isIn(['CASH', 'CARD', 'WALLET']),
   ],
   requestRide
 );
@@ -51,7 +51,13 @@ router.get('/:rideId', getRideDetails);
 // Get ride history
 router.get('/history/all', getRideHistory);
 
+// Get nearby drivers
+router.post('/nearby-drivers', getNearbyDrivers);
+
 // Calculate fare
 router.post('/calculate-fare', calculateFare);
+
+// Track ride (real-time updates)
+router.get('/:rideId/track', trackRide);
 
 export default router;
