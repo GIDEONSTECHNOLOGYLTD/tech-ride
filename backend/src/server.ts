@@ -8,6 +8,9 @@ import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 
+// Import MongoDB connection
+import connectDB from './config/database';
+
 // Import routes
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -19,7 +22,20 @@ import adminRoutes from './routes/admin.routes';
 // Import socket handler
 import { initializeSocketHandlers } from './socket/socket.handler';
 
+// Import i18n
+import i18next from './config/i18n';
+import i18nextMiddleware from 'i18next-http-middleware';
+
+// Import Firebase
+import firebaseService from './services/firebase.service';
+
 dotenv.config();
+
+// Connect to MongoDB
+connectDB();
+
+// Initialize Firebase
+firebaseService.initialize();
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,6 +53,7 @@ app.use(compression());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(i18nextMiddleware.handle(i18next)); // Multi-language support
 
 // Rate limiting
 const limiter = rateLimit({
