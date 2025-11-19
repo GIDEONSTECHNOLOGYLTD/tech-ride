@@ -9,26 +9,67 @@ import {
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useRide } from '../../context/RideContext';
 import socketService from '../../services/socket';
+import { getDirections, decodePolyline, openGoogleMaps } from '../../services/maps.service';
+import { getCurrentLocation } from '../../utils/permissions';
 
 const { height } = Dimensions.get('window');
 
 const ActiveRideScreen = () => {
   const { currentRide, startRide, completeRide, cancelRide } = useRide();
   const [region, setRegion] = useState<any>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<any[]>([]);
+  const [currentLocation, setCurrentLocation] = useState<any>(null);
+  const [distance, setDistance] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
 
   useEffect(() => {
     if (currentRide) {
-      setRegion({
-        latitude: currentRide.pickup.coordinates[1],
-        longitude: currentRide.pickup.coordinates[0],
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+      loadDirections();
+      
+      // Get current location
+      getCurrentLocation().then((loc) => {
+        setCurrentLocation(loc);
+        setRegion({
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
       });
     }
   }, [currentRide]);
+
+  const loadDirections = async () => {
+    if (!currentRide) return;
+
+    try {
+      const origin = await getCurrentLocation();
+      const destination =
+        currentRide.status === 'ACCEPTED' || currentRide.status === 'ARRIVED'
+          ? {
+              latitude: currentRide.pickup.coordinates[1],
+              longitude: currentRide.pickup.coordinates[0],
+            }
+          : {
+              latitude: currentRide.dropoff.coordinates[1],
+              longitude: currentRide.dropoff.coordinates[0],
+            };
+
+      const directions = await getDirections(origin, destination);
+      
+      if (directions) {
+        const coords = decodePolyline(directions.polyline);
+        setRouteCoordinates(coords);
+        setDistance(directions.distance / 1000); // Convert to km
+        setDuration(Math.ceil(directions.duration / 60)); // Convert to minutes
+      }
+    } catch (error) {
+      console.error('Load directions error:', error);
+    }
+  };
 
   if (!currentRide) {
     return (
@@ -40,18 +81,22 @@ const ActiveRideScreen = () => {
   }
 
   const handleNavigate = () => {
+    if (!currentRide) return;
+
     const destination =
       currentRide.status === 'ACCEPTED' || currentRide.status === 'ARRIVED'
-        ? currentRide.pickup
-        : currentRide.dropoff;
+        ? {
+            latitude: currentRide.pickup.coordinates[1],
+            longitude: currentRide.pickup.coordinates[0],
+          }
+        : {
+            latitude: currentRide.dropoff.coordinates[1],
+            longitude: currentRide.dropoff.coordinates[0],
+          };
 
-    const url = `google.maps:q=${destination}`;
-    Linking.canOpenURL(url).then((supported) => {
-      if (supported) {
-        Linking.openURL(url);
-      } else {
-        Alert.alert('Error', 'Cannot open navigation app');
-      }
+    const url = openGoogleMaps(destination.latitude, destination.longitude);
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'Cannot open Google Maps');
     });
   };
 
@@ -146,21 +191,36 @@ const ActiveRideScreen = () => {
           region={region}
           showsUserLocation
           showsMyLocationButton
+          followsUserLocation
         >
+          {/* Route Polyline */}
+          {routeCoordinates.length > 0 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeWidth={4}
+              strokeColor="#00C851"
+            />
+          )}
+
+          {/* Pickup Marker */}
           <Marker
             coordinate={{
               latitude: currentRide.pickup.coordinates[1],
               longitude: currentRide.pickup.coordinates[0],
             }}
             title="Pickup"
+            description={currentRide.pickup}
             pinColor="#00C851"
           />
+
+          {/* Dropoff Marker */}
           <Marker
             coordinate={{
               latitude: currentRide.dropoff.coordinates[1],
               longitude: currentRide.dropoff.coordinates[0],
             }}
             title="Dropoff"
+            description={currentRide.dropoff}
             pinColor="#F44336"
           />
         </MapView>
@@ -213,7 +273,15 @@ const ActiveRideScreen = () => {
         <View style={styles.stats}>
           <View style={styles.stat}>
             <Icon name="road-variant" size={20} color="#666" />
-            <Text style={styles.statText}>{currentRide.distance.toFixed(1)} km</Text>
+            <Text style={styles.statText}>
+              {distance > 0 ? distance.toFixed(1) : currentRide.distance.toFixed(1)} km
+            </Text>
+          </View>
+          <View style={styles.stat}>
+            <Icon name="clock-outline" size={20} color="#666" />
+            <Text style={styles.statText}>
+              {duration > 0 ? duration : '~'} min
+            </Text>
           </View>
           <View style={styles.stat}>
             <Icon name="car" size={20} color="#666" />
