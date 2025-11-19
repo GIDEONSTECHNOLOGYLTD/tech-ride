@@ -1,10 +1,11 @@
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import Driver from '../models/Driver';
+import Ride from '../models/Ride';
+import User from '../models/User';
 
 export function initializeSocketHandlers(io: Server) {
+  // Socket authentication middleware
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) {
@@ -25,76 +26,235 @@ export function initializeSocketHandlers(io: Server) {
     const userId = (socket as any).userId;
     const role = (socket as any).role;
 
-    console.log(`User connected: ${userId} (${role})`);
+    console.log(`✅ User connected: ${userId} (${role})`);
 
-    // Join user-specific room
-    socket.join(`user-${userId}`);
+    // Join user-specific rooms
+    socket.join(`user_${userId}`);
     if (role === 'DRIVER') {
-      socket.join(`driver-${userId}`);
+      socket.join(`driver_${userId}`);
     }
 
-    // Driver location update
-    socket.on('update-location', async (data: { latitude: number; longitude: number }) => {
+    // Driver location update (every 5 seconds from driver app)
+    socket.on('update-location', async (data: { latitude: number; longitude: number; heading?: number }) => {
       if (role === 'DRIVER') {
         try {
-          await prisma.driver.update({
-            where: { userId },
-            data: {
-              currentLatitude: data.latitude,
-              currentLongitude: data.longitude,
-            },
-          });
+          const driver = await Driver.findOne({ userId });
+          if (driver) {
+            driver.currentLocation = {
+              type: 'Point',
+              coordinates: [data.longitude, data.latitude],
+            };
+            if (data.heading !== undefined) {
+              driver.heading = data.heading;
+            }
+            driver.lastOnline = new Date();
+            await driver.save();
 
-          // Broadcast location to riders tracking this driver
-          // (you'd need to track active rides and notify riders)
+            // If driver has active ride, broadcast location to rider
+            if (driver.currentRideId) {
+              const ride = await Ride.findById(driver.currentRideId);
+              if (ride) {
+                io.to(`user_${ride.riderId}`).emit('driver-location-update', {
+                  latitude: data.latitude,
+                  longitude: data.longitude,
+                  heading: data.heading,
+                  rideId: ride._id,
+                });
+              }
+            }
+          }
         } catch (error) {
-          console.error('Update location error:', error);
+          console.error('❌ Update location error:', error);
         }
       }
     });
 
-    // Driver status update
-    socket.on('update-status', async (data: { isOnline: boolean; isAvailable: boolean }) => {
+    // Driver status update (online/offline/available)
+    socket.on('update-status', async (data: { isOnline: boolean; isAvailable?: boolean }) => {
       if (role === 'DRIVER') {
         try {
-          await prisma.driver.update({
-            where: { userId },
-            data: {
-              isOnline: data.isOnline,
-              isAvailable: data.isAvailable,
-            },
-          });
+          const driver = await Driver.findOne({ userId });
+          if (driver) {
+            driver.isOnline = data.isOnline;
+            if (data.isAvailable !== undefined) {
+              driver.isAvailable = data.isAvailable;
+            }
+            if (data.isOnline) {
+              driver.lastOnline = new Date();
+            }
+            await driver.save();
+
+            console.log(`🚗 Driver ${userId} is now ${data.isOnline ? 'online' : 'offline'}`);
+          }
         } catch (error) {
-          console.error('Update status error:', error);
+          console.error('❌ Update status error:', error);
         }
       }
     });
 
-    // Driver arrived at pickup
+    // Driver arrived at pickup location
     socket.on('driver-arrived', async (rideId: string) => {
       try {
-        const ride = await prisma.ride.update({
-          where: { id: rideId },
-          data: { status: 'ARRIVED', arrivedAt: new Date() },
-        });
-        io.to(`user-${ride.riderId}`).emit('driver-arrived', { rideId });
+        const ride = await Ride.findById(rideId);
+        if (ride && ride.status === 'ACCEPTED') {
+          ride.status = 'ARRIVED';
+          ride.arrivedAt = new Date();
+          await ride.save();
+
+          // Notify rider
+          io.to(`user_${ride.riderId}`).emit('driver-arrived', {
+            rideId: ride._id,
+            arrivedAt: ride.arrivedAt,
+          });
+
+          console.log(`🎯 Driver arrived at pickup for ride ${rideId}`);
+        }
       } catch (error) {
-        console.error('Driver arrived error:', error);
+        console.error('❌ Driver arrived error:', error);
       }
     });
 
-    // Send message
-    socket.on('send-message', (data: { rideId: string; message: string; recipientId: string }) => {
-      io.to(`user-${data.recipientId}`).emit('new-message', {
+    // Rider location update (optional - for driver to see rider waiting)
+    socket.on('rider-location-update', async (data: { latitude: number; longitude: number }) => {
+      if (role === 'RIDER') {
+        try {
+          const user = await User.findById(userId);
+          if (user) {
+            user.currentLocation = {
+              type: 'Point',
+              coordinates: [data.longitude, data.latitude],
+            };
+            await user.save();
+          }
+        } catch (error) {
+          console.error('❌ Rider location update error:', error);
+        }
+      }
+    });
+
+    // In-ride messaging
+    socket.on('send-message', async (data: { rideId: string; message: string; recipientId: string }) => {
+      try {
+        io.to(`user_${data.recipientId}`).emit('new-message', {
+          rideId: data.rideId,
+          message: data.message,
+          senderId: userId,
+          timestamp: new Date(),
+        });
+
+        console.log(`💬 Message sent from ${userId} to ${data.recipientId}`);
+      } catch (error) {
+        console.error('❌ Send message error:', error);
+      }
+    });
+
+    // Driver accepts ride (additional socket notification)
+    socket.on('accept-ride', async (rideId: string) => {
+      if (role === 'DRIVER') {
+        try {
+          const ride = await Ride.findById(rideId);
+          if (ride && ride.status === 'PENDING') {
+            const driver = await Driver.findOne({ userId });
+            if (driver) {
+              ride.driverId = driver._id;
+              ride.status = 'ACCEPTED';
+              ride.acceptedAt = new Date();
+              await ride.save();
+
+              driver.isAvailable = false;
+              driver.currentRideId = ride._id;
+              await driver.save();
+
+              // Notify rider
+              const driverUser = await User.findById(driver.userId);
+              io.to(`user_${ride.riderId}`).emit('ride-accepted', {
+                rideId: ride._id,
+                driver: {
+                  id: driver._id,
+                  name: driverUser?.firstName,
+                  rating: driver.rating,
+                  vehicleModel: driver.vehicleModel,
+                  vehicleColor: driver.vehicleColor,
+                  licensePlate: driver.licensePlate,
+                  phone: driverUser?.phoneNumber,
+                },
+              });
+
+              console.log(`✅ Ride ${rideId} accepted by driver ${userId}`);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Accept ride error:', error);
+        }
+      }
+    });
+
+    // Typing indicator
+    socket.on('typing', (data: { rideId: string; recipientId: string }) => {
+      io.to(`user_${data.recipientId}`).emit('user-typing', {
         rideId: data.rideId,
-        message: data.message,
-        senderId: userId,
-        timestamp: new Date(),
+        userId,
       });
     });
 
+    // Request location sharing
+    socket.on('request-location', (recipientId: string) => {
+      io.to(`user_${recipientId}`).emit('location-requested', {
+        requesterId: userId,
+      });
+    });
+
+    // Emergency SOS
+    socket.on('emergency-sos', async (data: { rideId: string; location: { lat: number; lng: number } }) => {
+      try {
+        const ride = await Ride.findById(data.rideId);
+        if (ride) {
+          // Notify both parties and admin
+          io.to(`user_${ride.riderId}`).emit('emergency-alert', {
+            rideId: data.rideId,
+            location: data.location,
+            userId,
+          });
+
+          if (ride.driverId) {
+            const driver = await Driver.findById(ride.driverId);
+            if (driver) {
+              io.to(`user_${driver.userId}`).emit('emergency-alert', {
+                rideId: data.rideId,
+                location: data.location,
+                userId,
+              });
+            }
+          }
+
+          // Notify admins (you'd need an admin room)
+          io.to('admin-room').emit('emergency-alert', {
+            rideId: data.rideId,
+            location: data.location,
+            userId,
+            timestamp: new Date(),
+          });
+
+          console.log(`🚨 EMERGENCY SOS from ${userId} for ride ${data.rideId}`);
+        }
+      } catch (error) {
+        console.error('❌ Emergency SOS error:', error);
+      }
+    });
+
+    // Disconnect handler
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${userId}`);
+      console.log(`👋 User disconnected: ${userId}`);
+      
+      // Update driver status to offline if it's a driver
+      if (role === 'DRIVER') {
+        Driver.findOne({ userId }).then((driver) => {
+          if (driver) {
+            driver.isOnline = false;
+            driver.save();
+          }
+        });
+      }
     });
   });
 }

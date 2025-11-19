@@ -1,53 +1,78 @@
-import { PrismaClient, VehicleType } from '@prisma/client';
+import Driver from '../models/Driver';
+import User from '../models/User';
 import { calculateDistance } from './distance.util';
-
-const prisma = new PrismaClient();
 
 export async function findNearbyDrivers(
   latitude: number,
   longitude: number,
-  vehicleType: VehicleType,
+  vehicleType: string,
   radiusKm: number = 5
 ) {
-  // Get all online and available drivers with the requested vehicle type
-  const drivers = await prisma.driver.findMany({
-    where: {
+  try {
+    // Use MongoDB geospatial query to find nearby drivers
+    const nearbyDrivers = await Driver.find({
+      currentLocation: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
+          },
+          $maxDistance: radiusKm * 1000, // Convert km to meters
+        },
+      },
+      vehicleType,
       isOnline: true,
       isAvailable: true,
       isApproved: true,
-      vehicleType,
-      currentLatitude: { not: null },
-      currentLongitude: { not: null },
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          rating: true,
-          profileImage: true,
-        },
-      },
-    },
-  });
+    })
+      .limit(20)
+      .populate('userId', 'firstName lastName phoneNumber rating profilePhoto');
 
-  // Filter drivers within radius
-  const nearbyDrivers = drivers.filter((driver) => {
-    if (!driver.currentLatitude || !driver.currentLongitude) return false;
-    const distance = calculateDistance(
-      latitude,
-      longitude,
-      driver.currentLatitude,
-      driver.currentLongitude
-    );
-    return distance <= radiusKm;
-  });
+    return nearbyDrivers;
+  } catch (error) {
+    console.error('Error finding nearby drivers:', error);
+    return [];
+  }
+}
 
-  // Sort by distance
-  return nearbyDrivers.sort((a, b) => {
-    const distA = calculateDistance(latitude, longitude, a.currentLatitude!, a.currentLongitude!);
-    const distB = calculateDistance(latitude, longitude, b.currentLatitude!, b.currentLongitude!);
-    return distA - distB;
-  });
+export async function getDriverStats(driverId: string) {
+  const driver = await Driver.findById(driverId);
+  if (!driver) {
+    return null;
+  }
+
+  return {
+    rating: driver.rating,
+    totalRides: driver.totalRides,
+    completedRides: driver.completedRides,
+    cancelledRides: driver.cancelledRides,
+    acceptanceRate: driver.acceptanceRate,
+    totalEarnings: driver.totalEarnings,
+  };
+}
+
+export async function updateDriverLocation(
+  userId: string,
+  latitude: number,
+  longitude: number,
+  heading?: number
+) {
+  const driver = await Driver.findOne({ userId });
+  if (!driver) {
+    throw new Error('Driver not found');
+  }
+
+  driver.currentLocation = {
+    type: 'Point',
+    coordinates: [longitude, latitude],
+  };
+  
+  if (heading !== undefined) {
+    driver.heading = heading;
+  }
+
+  driver.lastOnline = new Date();
+  await driver.save();
+
+  return driver;
 }

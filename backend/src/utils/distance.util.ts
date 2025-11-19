@@ -1,7 +1,3 @@
-import { VehicleType, PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
 // Calculate distance between two coordinates using Haversine formula
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in km
@@ -18,44 +14,29 @@ function toRad(degrees: number): number {
   return degrees * (Math.PI / 180);
 }
 
-// Calculate fare based on distance, duration, and vehicle type
-export async function calculateFareAmount(
-  distance: number,
-  duration: number,
-  vehicleType: VehicleType
-): Promise<{ baseFare: number; distanceFare: number; timeFare: number; surgeMultiplier: number; totalFare: number }> {
-  const baseFare = parseFloat(process.env.BASE_FARE || '2.50');
-  const costPerKm = parseFloat(process.env.COST_PER_KM || '1.20');
-  const costPerMinute = parseFloat(process.env.COST_PER_MINUTE || '0.30');
+// Calculate estimated duration based on distance
+export function calculateEstimatedDuration(distanceKm: number, averageSpeedKmh: number = 40): number {
+  return Math.ceil((distanceKm / averageSpeedKmh) * 60); // Returns minutes
+}
 
-  // Vehicle type multipliers
-  const vehicleMultipliers = {
-    ECONOMY: 1.0,
-    COMFORT: 1.3,
-    XL: 1.6,
-    BIKE: 0.7,
-  };
+// Check if coordinates are within a certain radius
+export function isWithinRadius(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+  radiusKm: number
+): boolean {
+  const distance = calculateDistance(lat1, lon1, lat2, lon2);
+  return distance <= radiusKm;
+}
 
-  const vehicleMultiplier = vehicleMultipliers[vehicleType];
-
-  const distanceFare = distance * costPerKm * vehicleMultiplier;
-  const timeFare = duration * costPerMinute * vehicleMultiplier;
-
-  // Check for surge pricing (simplified - in production, check demand/supply)
-  let surgeMultiplier = 1.0;
-  
-  // Example: Check if there's an active surge zone
-  // const surgeZones = await prisma.surgeZone.findMany({ where: { isActive: true } });
-  // Logic to determine surge multiplier based on pickup location
-
-  const subtotal = baseFare + distanceFare + timeFare;
-  const totalFare = subtotal * surgeMultiplier;
-
-  return {
-    baseFare,
-    distanceFare,
-    timeFare,
-    surgeMultiplier,
-    totalFare: Math.round(totalFare * 100) / 100,
-  };
+// Calculate bearing between two points
+export function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dLon = toRad(lon2 - lon1);
+  const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+    Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+  const bearing = Math.atan2(y, x);
+  return (bearing * 180 / Math.PI + 360) % 360; // Convert to degrees
 }
