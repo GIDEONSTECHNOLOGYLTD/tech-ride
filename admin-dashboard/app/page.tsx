@@ -64,6 +64,18 @@ export default function Dashboard() {
     );
   }
 
+  const handleApproveDriver = async (driverId: string) => {
+    try {
+      await driversAPI.approve(driverId);
+      // Reload pending drivers
+      const driversRes = await driversAPI.getAll(1, 5, 'PENDING');
+      setPendingDrivers(driversRes.data.drivers);
+      alert('Driver approved successfully!');
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Failed to approve driver');
+    }
+  };
+
   const statCards = [
     {
       title: 'Total Rides',
