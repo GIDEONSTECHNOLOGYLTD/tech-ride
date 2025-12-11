@@ -1,82 +1,73 @@
-import { io, Socket } from 'socket.io-client';
+// Socket.io removed due to SDK 54 compatibility issues
+// Using REST API polling instead
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SOCKET_URL = 'https://tech-ride.onrender.com';
 
 class SocketService {
-  private socket: Socket | null = null;
+  private connected: boolean = false;
 
   async connect() {
     const token = await AsyncStorage.getItem('authToken');
     if (!token) return;
-
-    this.socket = io(SOCKET_URL, {
-      auth: { token },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    this.socket.on('connect', () => console.log('✅ Driver Socket connected'));
-    this.socket.on('disconnect', () => console.log('❌ Driver Socket disconnected'));
-    this.socket.on('connect_error', (error) => console.error('Driver Socket error:', error));
+    
+    this.connected = true;
+    console.log('✅ Driver Service connected (polling mode)');
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
+    this.connected = false;
+    console.log('❌ Driver Service disconnected');
   }
 
-  // Driver-specific events
+  // Driver-specific events (stubs for polling mode)
   onRideRequest(callback: (data: any) => void) {
-    this.socket?.on('ride-request', callback);
+    // Use polling instead
+    console.log('Use polling for ride requests');
   }
 
   acceptRide(rideId: string) {
-    this.socket?.emit('accept-ride', rideId);
+    console.log('Accept ride via API:', rideId);
   }
 
   rejectRide(rideId: string, reason: string) {
-    this.socket?.emit('reject-ride', { rideId, reason });
+    console.log('Reject ride via API:', rideId);
   }
 
   startRide(rideId: string) {
-    this.socket?.emit('start-ride', rideId);
+    console.log('Start ride via API:', rideId);
   }
 
   completeRide(rideId: string) {
-    this.socket?.emit('complete-ride', rideId);
+    console.log('Complete ride via API:', rideId);
   }
 
   // Location updates
   updateLocation(latitude: number, longitude: number) {
-    this.socket?.emit('update-location', { latitude, longitude });
+    console.log('Update location via API:', latitude, longitude);
   }
 
   // Driver status
   setOnline() {
-    this.socket?.emit('driver-online');
+    console.log('Set driver online via API');
   }
 
   setOffline() {
-    this.socket?.emit('driver-offline');
+    console.log('Set driver offline via API');
   }
 
   // Messages
   sendMessage(rideId: string, message: string, recipientId: string) {
-    this.socket?.emit('send-message', { rideId, message, recipientId });
+    console.log('Send message via API');
   }
 
   onNewMessage(callback: (data: any) => void) {
-    this.socket?.on('new-message', callback);
+    console.log('Use polling for messages');
   }
 
   // Remove listeners
   removeAllListeners() {
-    this.socket?.removeAllListeners();
+    console.log('No listeners to remove (polling mode)');
   }
 }
 

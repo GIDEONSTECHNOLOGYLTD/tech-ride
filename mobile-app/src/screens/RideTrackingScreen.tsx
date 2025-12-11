@@ -11,7 +11,8 @@ const { width } = Dimensions.get('window');
 export default function RideTrackingScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { rideId } = route.params as any;
+  const params = route.params as any;
+  const rideId = params?.rideId;
   const [ride, setRide] = useState<any>(null);
   const [rideStatus, setRideStatus] = useState('PENDING');
   const [driver, setDriver] = useState<any>(null);
@@ -20,8 +21,9 @@ export default function RideTrackingScreen() {
 
   useEffect(() => {
     if (!rideId) {
-      Alert.alert('Error', 'No ride ID provided');
-      navigation.goBack();
+      Alert.alert('Error', 'No ride ID provided', [
+        { text: 'OK', onPress: () => navigation.navigate('Home' as never) }
+      ]);
       return;
     }
 

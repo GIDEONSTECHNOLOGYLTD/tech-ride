@@ -1,4 +1,5 @@
-import { io, Socket } from 'socket.io-client';
+// Socket.io removed due to SDK 54 compatibility issues
+// Using REST API polling instead
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SOCKET_URL = __DEV__ ? 'http://localhost:5000' : 'https://api.techride.ng';
