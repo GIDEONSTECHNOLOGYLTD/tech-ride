@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "RideShare",
-    "slug": "rideshare-app",
+    "name": "TechRide",
+    "slug": "techride-rider",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,23 +9,26 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#3B82F6"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rideshare.app",
+      "bundleIdentifier": "com.gideonstech.techride",
+      "buildNumber": "1.0.0",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby drivers and provide accurate pickup.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track your ride and provide real-time updates.",
+        "NSLocationWhenInUseUsageDescription": "TechRide needs your location to show nearby drivers and provide accurate pickup.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "TechRide needs your location to track your ride and provide real-time updates.",
+        "NSLocationAlwaysUsageDescription": "TechRide needs background location access to track your ride.",
         "UIBackgroundModes": ["location"]
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#3B82F6"
       },
-      "package": "com.rideshare.app",
+      "package": "com.gideonstech.techride",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
