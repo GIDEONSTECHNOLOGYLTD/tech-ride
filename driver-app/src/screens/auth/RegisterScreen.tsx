@@ -51,7 +51,20 @@ const RegisterScreen = ({ navigation }: any) => {
       // Navigate to OTP screen
       navigation.navigate('OTP', { phoneNumber: formData.phoneNumber });
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message);
+      let errorMsg = 'Registration failed';
+      
+      if (!error.response) {
+        errorMsg = `Network error: ${error.message || 'Cannot connect to server'}`;
+      } else if (error.response.data?.errors) {
+        const validationErrors = error.response.data.errors;
+        errorMsg = validationErrors.map((e: any) => e.msg).join(', ');
+      } else if (error.response.data?.error) {
+        errorMsg = error.response.data.error;
+      } else {
+        errorMsg = error.message || 'Registration failed';
+      }
+      
+      Alert.alert('Registration Failed', errorMsg);
     } finally {
       setLoading(false);
     }
