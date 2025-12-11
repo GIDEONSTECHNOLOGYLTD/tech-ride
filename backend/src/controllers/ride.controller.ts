@@ -340,8 +340,8 @@ export const completeRide = async (req: Request, res: Response) => {
 
     await payment.save();
 
-    // Update payment status in ride
-    ride.paymentStatus = payment.status;
+    // Update payment status in ride (cast to avoid type error)
+    ride.paymentStatus = payment.status as any;
     await ride.save();
 
     // Update driver
@@ -424,15 +424,16 @@ export const cancelRide = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Cannot cancel this ride' });
     }
 
+    // Cancellation fee logic (charge if driver already arrived)
+    const previousStatus = ride.status;
+    if (previousStatus === 'ARRIVED' || previousStatus === 'IN_PROGRESS') {
+      ride.cancellationFee = 500; // ₦500 cancellation fee
+    }
+
     ride.status = 'CANCELLED';
     ride.cancelledAt = new Date();
     ride.cancelledBy = userRole === 'DRIVER' ? 'DRIVER' : 'RIDER';
     ride.cancellationReason = reason;
-
-    // Cancellation fee logic (charge if driver already arrived)
-    if (ride.status === 'ARRIVED' || ride.status === 'IN_PROGRESS') {
-      ride.cancellationFee = 500; // ₦500 cancellation fee
-    }
 
     await ride.save();
 

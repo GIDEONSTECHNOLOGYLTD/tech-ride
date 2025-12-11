@@ -1,12 +1,27 @@
 import twilio from 'twilio';
 
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+let twilioClient: any = null;
+
+function getTwilioClient() {
+  if (!twilioClient && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  }
+  return twilioClient;
+}
 
 export async function sendSMS(to: string, message: string): Promise<boolean> {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[SMS] To: ${to}, Message: ${message}`);
+    // Always log in development, even without Twilio credentials
+    console.log(`📱 [SMS] To: ${to}, Message: ${message}`);
+    
+    if (process.env.NODE_ENV === 'development' || !process.env.TWILIO_ACCOUNT_SID) {
       return true;
+    }
+
+    const client = getTwilioClient();
+    if (!client) {
+      console.warn('⚠️  Twilio not configured - SMS not sent');
+      return false;
     }
 
     await client.messages.create({

@@ -120,7 +120,7 @@ export function initializeSocketHandlers(io: Server) {
         try {
           const user = await User.findById(userId);
           if (user) {
-            user.currentLocation = {
+            user.lastKnownLocation = {
               type: 'Point',
               coordinates: [data.longitude, data.latitude],
             };

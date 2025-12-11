@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, authorizeRole } from '../middleware/auth.middleware';
 import {
   registerDriver,
   getDriverProfile,
@@ -19,7 +19,7 @@ router.use(authenticate);
 router.post('/register', registerDriver);
 
 // Driver-only routes
-router.use(authorize(['DRIVER']));
+router.use(authorizeRole('DRIVER'));
 
 router.get('/profile', getDriverProfile);
 router.put('/status', updateDriverStatus);

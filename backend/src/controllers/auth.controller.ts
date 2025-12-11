@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import User from '../models/User';
 import { sendSMS } from '../utils/sms.util';
@@ -63,7 +63,7 @@ export const register = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      { expiresIn: JWT_EXPIRE } as any
     );
 
     res.status(201).json({
@@ -120,7 +120,7 @@ export const login = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      { expiresIn: JWT_EXPIRE } as any
     );
 
     res.json({
@@ -259,7 +259,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRE }
+      { expiresIn: JWT_EXPIRE } as any
     );
 
     res.json({

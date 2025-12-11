@@ -145,7 +145,7 @@ class PricingService {
     };
     
     const discount = discounts[referralLevel as keyof typeof discounts] || 0;
-    return baseFare * discount;
+    return basefare * discount;
   }
 }
 

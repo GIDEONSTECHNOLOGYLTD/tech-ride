@@ -22,20 +22,27 @@ import adminRoutes from './routes/admin.routes';
 // Import socket handler
 import { initializeSocketHandlers } from './socket/socket.handler';
 
-// Import i18n
-import i18next from './config/i18n';
-import i18nextMiddleware from 'i18next-http-middleware';
-
-// Import Firebase
-import firebaseService from './services/firebase.service';
+// Import Firebase (optional for local dev)
+let firebaseService: any;
+try {
+  firebaseService = require('./services/firebase.service').default;
+} catch (error) {
+  console.warn('⚠️  Firebase service not available');
+}
 
 dotenv.config();
 
 // Connect to MongoDB
 connectDB();
 
-// Initialize Firebase
-firebaseService.initialize();
+// Initialize Firebase (optional)
+if (firebaseService) {
+  try {
+    firebaseService.initialize();
+  } catch (error) {
+    console.warn('⚠️  Firebase not initialized - continuing without push notifications');
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -53,7 +60,8 @@ app.use(compression());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(i18nextMiddleware.handle(i18next)); // Multi-language support
+// Multi-language support (optional for local dev)
+// app.use(i18nextMiddleware.handle(i18next));
 
 // Rate limiting
 const limiter = rateLimit({
