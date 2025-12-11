@@ -33,8 +33,21 @@ export default function HomeScreen() {
   }, [location?.latitude, location?.longitude]);
 
   const checkUserRole = async () => {
-    const role = await AsyncStorage.getItem('userRole');
-    setUserRole(role || '');
+    try {
+      const userDataStr = await AsyncStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        // Only set admin if role is EXACTLY 'ADMIN'
+        if (userData.role && userData.role.toUpperCase() === 'ADMIN') {
+          setUserRole('ADMIN');
+        } else {
+          setUserRole('');
+        }
+      }
+    } catch (error) {
+      console.log('Failed to get user role:', error);
+      setUserRole('');
+    }
   };
 
   const requestLocationPermission = async () => {
@@ -108,10 +121,10 @@ export default function HomeScreen() {
         <View style={styles.topMenuRight}>
           {userRole === 'ADMIN' && (
             <TouchableOpacity 
-              style={[styles.menuButton, styles.adminButton]} 
+              style={styles.adminButton}
               onPress={() => navigation.navigate('AdminDashboard' as never)}
             >
-              <Ionicons name="shield-checkmark" size={24} color="#FFF" />
+              <Ionicons name="settings" size={24} color="#FFF" />
             </TouchableOpacity>
           )}
           <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Wallet' as never)}>
