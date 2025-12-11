@@ -24,20 +24,14 @@ interface PaymentMethodScreenProps {
 const PaymentMethodScreen: React.FC<PaymentMethodScreenProps> = ({ navigation, route }) => {
   const params = route.params || {};
   const rideId = params.rideId;
-  const amount = params.amount;
+  const amount = params.amount || 0;
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState<any>(null);
   const [cryptoPrices, setCryptoPrices] = useState<any>(null);
 
   useEffect(() => {
-    if (!rideId || !amount) {
-      Alert.alert('Error', 'Missing ride information', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
-      return;
-    }
     loadWalletAndPrices();
-  }, [rideId, amount]);
+  }, []);
 
   const loadWalletAndPrices = async () => {
     try {
