@@ -19,7 +19,9 @@
         "NSLocationWhenInUseUsageDescription": "TechRide needs your location to show nearby drivers and provide accurate pickup.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TechRide needs your location to track your ride and provide real-time updates.",
         "NSLocationAlwaysUsageDescription": "TechRide needs background location access to track your ride.",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -32,7 +34,9 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -45,6 +49,11 @@
           "locationAlwaysAndWhenInUsePermission": "Allow RideShare to use your location for accurate pickups and tracking."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0cc47470-15b2-4d5d-8d12-e74b76a4d958"
+      }
+    }
   }
 }
