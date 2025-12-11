@@ -1,10 +1,65 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { userAPI } from '../services/api.service';
 
 export default function WalletScreen() {
   const navigation = useNavigation();
+  const [wallet, setWallet] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadWalletData();
+  }, []);
+
+  const loadWalletData = async () => {
+    try {
+      const walletRes = await userAPI.getWallet();
+      setWallet(walletRes.data.wallet);
+      
+      // Get payment history as transactions
+      const historyRes = await userAPI.getProfile();
+      // Transactions would come from payment history - simplified here
+      setTransactions([]);
+    } catch (error) {
+      console.error('Failed to load wallet:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTopUp = () => {
+    Alert.alert(
+      'Top Up Wallet',
+      'Choose amount to add to your wallet',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: '$10', onPress: () => topUpWallet(10) },
+        { text: '$25', onPress: () => topUpWallet(25) },
+        { text: '$50', onPress: () => topUpWallet(50) },
+      ]
+    );
+  };
+
+  const topUpWallet = async (amount: number) => {
+    try {
+      await userAPI.topupWallet(amount, 'CARD');
+      Alert.alert('Success', `$${amount} added to your wallet`);
+      loadWalletData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Top-up failed');
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -18,8 +73,8 @@ export default function WalletScreen() {
 
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Available Balance</Text>
-        <Text style={styles.balanceAmount}>$125.50</Text>
-        <TouchableOpacity style={styles.topupButton}>
+        <Text style={styles.balanceAmount}>${wallet?.balance?.toFixed(2) || '0.00'}</Text>
+        <TouchableOpacity style={styles.topupButton} onPress={handleTopUp}>
           <Ionicons name="add-circle" size={20} color="#fff" />
           <Text style={styles.topupText}>Top Up</Text>
         </TouchableOpacity>
@@ -27,18 +82,33 @@ export default function WalletScreen() {
 
       <ScrollView style={styles.transactions}>
         <Text style={styles.sectionTitle}>Recent Transactions</Text>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <View key={i} style={styles.transactionItem}>
-            <View style={styles.transactionIcon}>
-              <Ionicons name="car" size={20} color="#4F46E5" />
+        {wallet?.transactions && wallet.transactions.length > 0 ? (
+          wallet.transactions.slice(0, 10).map((txn: any, i: number) => (
+            <View key={i} style={styles.transactionItem}>
+              <View style={styles.transactionIcon}>
+                <Ionicons 
+                  name={txn.type === 'DEBIT' ? 'arrow-up' : 'arrow-down'} 
+                  size={20} 
+                  color={txn.type === 'DEBIT' ? '#EF4444' : '#10B981'} 
+                />
+              </View>
+              <View style={styles.transactionInfo}>
+                <Text style={styles.transactionTitle}>{txn.description || 'Transaction'}</Text>
+                <Text style={styles.transactionDate}>
+                  {new Date(txn.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+              <Text style={[styles.transactionAmount, txn.type === 'CREDIT' && { color: '#10B981' }]}>
+                {txn.type === 'DEBIT' ? '-' : '+'}${txn.amount.toFixed(2)}
+              </Text>
             </View>
-            <View style={styles.transactionInfo}>
-              <Text style={styles.transactionTitle}>Ride to Downtown</Text>
-              <Text style={styles.transactionDate}>Nov {18 + i}, 2024</Text>
-            </View>
-            <Text style={styles.transactionAmount}>-$8.50</Text>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons name="wallet-outline" size={48} color="#D1D5DB" />
+            <Text style={styles.emptyText}>No transactions yet</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
     </View>
   );
@@ -61,4 +131,6 @@ const styles = StyleSheet.create({
   transactionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   transactionDate: { fontSize: 14, color: '#6B7280' },
   transactionAmount: { fontSize: 16, fontWeight: 'bold', color: '#EF4444' },
+  emptyState: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 16, color: '#9CA3AF', marginTop: 12 },
 });
