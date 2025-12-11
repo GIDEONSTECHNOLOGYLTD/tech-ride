@@ -1,25 +1,118 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { rideAPI, userAPI } from '../services/api.service';
 
 const VEHICLE_TYPES = [
-  { id: 'ECONOMY', name: 'Economy', icon: '🚗', time: '2 min', price: '$8.50', seats: 4, description: 'Affordable rides' },
-  { id: 'COMFORT', name: 'Comfort', icon: '✨', time: '3 min', price: '$11.20', seats: 4, description: 'Premium comfort' },
-  { id: 'XL', name: 'XL', icon: '🚙', time: '4 min', price: '$13.60', seats: 6, description: 'Extra space' },
-  { id: 'BIKE', name: 'Bike', icon: '🏍️', time: '1 min', price: '$5.95', seats: 1, description: 'Fast & cheap' },
+  { id: 'ECONOMY', name: 'Economy', icon: '🚗', seats: 4, description: 'Affordable rides' },
+  { id: 'COMFORT', name: 'Comfort', icon: '✨', seats: 4, description: 'Premium comfort' },
+  { id: 'XL', name: 'XL', icon: '🚙', seats: 6, description: 'Extra space' },
+  { id: 'BIKE', name: 'Bike', icon: '🏍️', seats: 1, description: 'Fast & cheap' },
 ];
 
 export default function RideRequestScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const [selectedVehicle, setSelectedVehicle] = useState('ECONOMY');
   const [pickup, setPickup] = useState('Current Location');
   const [dropoff, setDropoff] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CARD');
+  const [pickupCoords, setPickupCoords] = useState<any>(null);
+  const [dropoffCoords, setDropoffCoords] = useState<any>(null);
+  const [fares, setFares] = useState<any>(null);
+  const [loadingFares, setLoadingFares] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
 
-  const handleRequestRide = () => {
-    // In real app, call API to request ride
-    navigation.navigate('RideTracking' as never);
+  useEffect(() => {
+    getCurrentLocation();
+    loadWalletBalance();
+  }, []);
+
+  useEffect(() => {
+    if (pickupCoords && dropoffCoords) {
+      calculateFares();
+    }
+  }, [pickupCoords, dropoffCoords, selectedVehicle]);
+
+  const getCurrentLocation = async () => {
+    try {
+      const location = await Location.getCurrentPositionAsync({});
+      setPickupCoords({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get current location');
+    }
+  };
+
+  const loadWalletBalance = async () => {
+    try {
+      const response = await userAPI.getWallet();
+      setWalletBalance(response.data.wallet.balance || 0);
+    } catch (error) {
+      console.error('Failed to load wallet balance');
+    }
+  };
+
+  const calculateFares = async () => {
+    setLoadingFares(true);
+    try {
+      const response = await rideAPI.calculateFare({
+        pickupLocation: pickupCoords,
+        dropoffLocation: dropoffCoords,
+        vehicleType: selectedVehicle,
+      });
+      setFares(response.data);
+    } catch (error: any) {
+      console.error('Fare calculation error:', error);
+    } finally {
+      setLoadingFares(false);
+    }
+  };
+
+  const handleRequestRide = async () => {
+    if (!dropoffCoords) {
+      Alert.alert('Error', 'Please enter a destination');
+      return;
+    }
+
+    if (paymentMethod === 'WALLET' && walletBalance < (fares?.estimatedFare || 0)) {
+      Alert.alert(
+        'Insufficient Balance',
+        `Your wallet balance (₦${walletBalance.toFixed(2)}) is less than the fare (₦${fares?.estimatedFare?.toFixed(2)}). Please top up or use another payment method.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setRequesting(true);
+    try {
+      const response = await rideAPI.requestRide({
+        pickupLocation: {
+          latitude: pickupCoords.latitude,
+          longitude: pickupCoords.longitude,
+          address: pickup,
+        },
+        dropoffLocation: {
+          latitude: dropoffCoords.latitude,
+          longitude: dropoffCoords.longitude,
+          address: dropoff,
+        },
+        vehicleType: selectedVehicle,
+        paymentMethod,
+      });
+
+      const rideId = response.data.ride._id;
+      navigation.navigate('RideTracking' as never, { rideId } as never);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.error || 'Failed to request ride');
+    } finally {
+      setRequesting(false);
+    }
   };
 
   return (
@@ -71,7 +164,13 @@ export default function RideRequestScreen() {
               <Text style={styles.vehicleDescription}>{vehicle.description}</Text>
               <Text style={styles.vehicleTime}>{vehicle.time} away • {vehicle.seats} seats</Text>
             </View>
-            <Text style={styles.vehiclePrice}>{vehicle.price}</Text>
+            {loadingFares ? (
+              <ActivityIndicator size="small" color="#4F46E5" />
+            ) : fares ? (
+              <Text style={styles.vehiclePrice}>₦{fares.estimatedFare?.toFixed(2) || '0.00'}</Text>
+            ) : (
+              <Text style={styles.vehiclePrice}>--</Text>
+            )}
           </TouchableOpacity>
         ))}
 
@@ -93,7 +192,7 @@ export default function RideRequestScreen() {
           >
             <Ionicons name="wallet" size={24} color={paymentMethod === 'WALLET' ? '#4F46E5' : '#6B7280'} />
             <Text style={[styles.paymentText, paymentMethod === 'WALLET' && styles.paymentTextSelected]}>
-              Wallet ($125.50)
+              Wallet (₦{walletBalance.toFixed(2)})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -116,12 +215,26 @@ export default function RideRequestScreen() {
 
       {/* Request Button */}
       <View style={styles.footer}>
+        <View style={styles.fareRow}>
+          <Text style={styles.fareLabel}>Estimated Fare:</Text>
+          {loadingFares ? (
+            <ActivityIndicator size="small" color="#4F46E5" />
+          ) : fares ? (
+            <Text style={styles.fareAmount}>₦{fares.estimatedFare?.toFixed(2) || '0.00'}</Text>
+          ) : (
+            <Text style={styles.fareAmount}>--</Text>
+          )}
+        </View>
         <TouchableOpacity
-          style={[styles.requestButton, !dropoff && styles.requestButtonDisabled]}
+          style={[styles.requestButton, (!dropoff || requesting) && styles.requestButtonDisabled]}
           onPress={handleRequestRide}
-          disabled={!dropoff}
+          disabled={!dropoff || requesting}
         >
-          <Text style={styles.requestButtonText}>Request Ride</Text>
+          {requesting ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.requestButtonText}>Request Ride</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -298,5 +411,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  fareRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  fareLabel: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  fareAmount: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
   },
 });
