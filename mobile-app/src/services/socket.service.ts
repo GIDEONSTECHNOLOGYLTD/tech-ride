@@ -1,7 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = Constants.expoConfig?.extra?.socketUrl || 'https://tech-ride.onrender.com';
 
 class SocketService {
   private socket: Socket | null = null;

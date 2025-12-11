@@ -21,7 +21,8 @@
         "NSLocationAlwaysUsageDescription": "TechRide needs background location access to track your ride.",
         "UIBackgroundModes": [
           "location"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -53,7 +54,9 @@
     "extra": {
       "eas": {
         "projectId": "0cc47470-15b2-4d5d-8d12-e74b76a4d958"
-      }
+      },
+      "apiUrl": "https://tech-ride.onrender.com/api",
+      "socketUrl": "https://tech-ride.onrender.com"
     }
   }
 }

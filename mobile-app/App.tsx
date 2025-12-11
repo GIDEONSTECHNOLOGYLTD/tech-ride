@@ -16,6 +16,7 @@ import RideTrackingScreen from './src/screens/RideTrackingScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import RideHistoryScreen from './src/screens/RideHistoryScreen';
 import WalletScreen from './src/screens/WalletScreen';
+import PaymentMethodScreen from './src/screens/PaymentMethodScreen';
 
 // Services
 import { initializeApp } from './src/services/app.service';
@@ -49,6 +50,7 @@ export default function App() {
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="RideHistory" component={RideHistoryScreen} />
             <Stack.Screen name="Wallet" component={WalletScreen} />
+            <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>
