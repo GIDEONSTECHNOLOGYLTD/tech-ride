@@ -127,9 +127,7 @@ const DriverSchema = new Schema<IDriver>({
 
 // Indexes
 DriverSchema.index({ currentLocation: '2dsphere' });
-DriverSchema.index({ userId: 1 });
 DriverSchema.index({ isOnline: 1, isAvailable: 1, isApproved: 1 });
-DriverSchema.index({ licensePlate: 1 });
 DriverSchema.index({ verificationStatus: 1 });
 
 export default mongoose.model<IDriver>('Driver', DriverSchema);

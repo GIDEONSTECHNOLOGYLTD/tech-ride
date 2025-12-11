@@ -60,7 +60,6 @@ const PromoCodeSchema = new Schema<IPromoCode>({
 });
 
 // Indexes
-PromoCodeSchema.index({ code: 1 });
 PromoCodeSchema.index({ isActive: 1, endDate: 1 });
 
 export default mongoose.model<IPromoCode>('PromoCode', PromoCodeSchema);

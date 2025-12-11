@@ -113,9 +113,6 @@ const UserSchema = new Schema<IUser>({
 
 // Indexes for performance
 UserSchema.index({ lastKnownLocation: '2dsphere' });
-UserSchema.index({ phoneNumber: 1 });
-UserSchema.index({ referralCode: 1 });
-UserSchema.index({ email: 1 });
 UserSchema.index({ role: 1, isActive: 1 });
 
 // Hash password before saving

@@ -90,6 +90,5 @@ PaymentSchema.index({ rideId: 1 });
 PaymentSchema.index({ userId: 1, createdAt: -1 });
 PaymentSchema.index({ driverId: 1, createdAt: -1 });
 PaymentSchema.index({ status: 1 });
-PaymentSchema.index({ paystackReference: 1 });
 
 export default mongoose.model<IPayment>('Payment', PaymentSchema);
