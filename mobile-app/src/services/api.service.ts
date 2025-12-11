@@ -18,8 +18,11 @@ api.interceptors.request.use(async (config) => {
 });
 
 export const authAPI = {
+  login: (data: { phoneNumber: string; password: string }) => api.post('/auth/login', data),
   register: (data: any) => api.post('/auth/register', data),
-  login: (data: any) => api.post('/auth/login', data),
+  forgotPassword: (phoneNumber: string) => api.post('/auth/forgot-password', { phoneNumber }),
+  resetPassword: (phoneNumber: string, otp: string, newPassword: string) => 
+    api.post('/auth/reset-password', { phoneNumber, otp, newPassword }),
   verifyOTP: (data: any) => api.post('/auth/verify-otp', data),
 };
 
@@ -40,8 +43,10 @@ export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data: any) => api.put('/users/profile', data),
   getWallet: () => api.get('/users/wallet'),
-  topupWallet: (amount: number, method: string) => 
-    api.post('/users/wallet/topup', { amount, method }),
+  topupWallet: (amount: number, paymentMethod: string) => 
+    api.post('/users/wallet/topup', { amount, paymentMethod }),
+  getNearbyDrivers: (latitude: number, longitude: number, radius: number = 5) =>
+    api.get('/drivers/nearby', { params: { latitude, longitude, radius } }),
   addCryptoWallet: (currency: string, address: string) => 
     api.post('/users/wallet/crypto', { currency, address }),
   getNotifications: () => api.get('/users/notifications'),

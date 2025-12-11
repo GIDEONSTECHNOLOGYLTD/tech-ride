@@ -92,6 +92,13 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity 
+          style={styles.forgotPassword}
+          onPress={() => navigation.navigate('ForgotPassword' as never)}
+        >
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
         {error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle" size={20} color="#EF4444" />
