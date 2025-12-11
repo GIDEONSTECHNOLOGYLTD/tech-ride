@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { driverAPI } from '../../services/api';
 import { format } from 'date-fns';
 
@@ -40,8 +42,113 @@ const DocumentsScreen = ({ navigation }: any) => {
     return verified ? 'Verified' : 'Pending Verification';
   };
 
-  const handleUploadDocument = (type: string) => {
-    Alert.alert('Upload Document', `Upload ${type} feature coming soon`);
+  const handleUploadDocument = async (type: string) => {
+    try {
+      let result;
+      
+      if (type === 'Profile Photo') {
+        // Request camera permission
+        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+        
+        if (!permissionResult.granted) {
+          Alert.alert('Permission Required', 'Camera permission is needed to take photos');
+          return;
+        }
+
+        // Show options for camera or gallery
+        Alert.alert(
+          'Upload Photo',
+          'Choose an option',
+          [
+            {
+              text: 'Take Photo',
+              onPress: async () => {
+                const photo = await ImagePicker.launchCameraAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  allowsEditing: true,
+                  aspect: [1, 1],
+                  quality: 0.8,
+                });
+                
+                if (!photo.canceled && photo.assets[0]) {
+                  uploadFile(photo.assets[0].uri, type);
+                }
+              },
+            },
+            {
+              text: 'Choose from Gallery',
+              onPress: async () => {
+                const photo = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  allowsEditing: true,
+                  aspect: [1, 1],
+                  quality: 0.8,
+                });
+                
+                if (!photo.canceled && photo.assets[0]) {
+                  uploadFile(photo.assets[0].uri, type);
+                }
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+      } else {
+        // For documents, use document picker
+        result = await DocumentPicker.getDocumentAsync({
+          type: ['image/*', 'application/pdf'],
+          copyToCacheDirectory: true,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+          uploadFile(result.assets[0].uri, type);
+        }
+      }
+    } catch (error) {
+      console.error('Document picker error:', error);
+      Alert.alert('Error', 'Failed to pick document');
+    }
+  };
+
+  const uploadFile = async (uri: string, type: string) => {
+    try {
+      // Create FormData
+      const formData = new FormData();
+      
+      // Get file extension
+      const uriParts = uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      
+      // Map document type to field name
+      const fieldMap: any = {
+        "Driver's License": 'licensePhoto',
+        'Vehicle Registration': 'vehicleRegistration',
+        'Vehicle Insurance': 'insurance',
+        'Profile Photo': 'profilePhoto',
+      };
+      
+      const fieldName = fieldMap[type];
+      
+      // Add file to form data
+      formData.append(fieldName, {
+        uri,
+        name: `${fieldName}.${fileType}`,
+        type: fileType === 'pdf' ? 'application/pdf' : `image/${fileType}`,
+      } as any);
+
+      // Upload to backend
+      Alert.alert('Uploading', 'Please wait while we upload your document...');
+      
+      // Note: This requires a multipart/form-data upload endpoint
+      // The actual implementation will depend on your backend API
+      await driverAPI.updateProfile(formData);
+      
+      Alert.alert('Success', `${type} uploaded successfully`);
+      loadDocuments(); // Reload documents
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', error.response?.data?.error || 'Failed to upload document. Please try again.');
+    }
   };
 
   if (loading) {

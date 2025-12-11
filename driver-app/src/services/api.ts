@@ -60,6 +60,7 @@ export const authAPI = {
 export const driverAPI = {
   registerDriver: (data: any) => api.post('/drivers/register', data),
   getProfile: () => api.get('/drivers/profile'),
+  updateProfile: (data: any) => api.put('/drivers/profile', data),
   updateStatus: (isOnline: boolean) => api.put('/drivers/status', { isOnline }),
   updateLocation: (latitude: number, longitude: number, heading?: number) =>
     api.put('/drivers/location', { latitude, longitude, heading }),
