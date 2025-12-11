@@ -46,7 +46,7 @@
       "apiUrl": "https://tech-ride.onrender.com/api",
       "socketUrl": "https://tech-ride.onrender.com",
       "eas": {
-        "projectId": "driver-app-project-id"
+        "projectId": "e5972c7b-6172-439a-a512-42444c95f1ec"
       }
     }
   }
