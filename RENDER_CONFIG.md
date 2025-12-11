@@ -71,8 +71,8 @@ Auto-Deploy: Yes
 Click "Add Environment Variable" for each:
 ```
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://techride-backend.onrender.com/api
-NEXT_PUBLIC_SOCKET_URL=https://techride-backend.onrender.com
+NEXT_PUBLIC_API_URL=https://tech-ride.onrender.com/api
+NEXT_PUBLIC_SOCKET_URL=https://tech-ride.onrender.com
 ```
 
 ---

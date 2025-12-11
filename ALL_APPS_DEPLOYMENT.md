@@ -55,7 +55,7 @@ GOOGLE_MAPS_API_KEY=your_maps_key
 
 ### Health Check
 - Path: `/health`
-- URL: `https://techride-backend.onrender.com/health`
+- URL: `https://tech-ride.onrender.com/health`
 - Returns: `{"status":"ok","timestamp":"..."}`
 
 ---
@@ -82,8 +82,8 @@ cd admin-dashboard && npm start
 ### Environment Variables Required
 ```env
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://techride-backend.onrender.com/api
-NEXT_PUBLIC_SOCKET_URL=https://techride-backend.onrender.com
+NEXT_PUBLIC_API_URL=https://tech-ride.onrender.com/api
+NEXT_PUBLIC_SOCKET_URL=https://tech-ride.onrender.com
 ```
 
 ### Access
@@ -174,8 +174,8 @@ eas update --branch production
 ### Environment Setup
 The app uses `.env.production`:
 ```env
-API_URL=https://techride-backend.onrender.com/api
-SOCKET_URL=https://techride-backend.onrender.com
+API_URL=https://tech-ride.onrender.com/api
+SOCKET_URL=https://tech-ride.onrender.com
 GOOGLE_MAPS_API_KEY=your_key
 ```
 
@@ -262,8 +262,8 @@ open TechRideDriver.xcworkspace
 ### Environment Setup
 The app uses `.env.production`:
 ```env
-API_URL=https://techride-backend.onrender.com/api
-SOCKET_URL=https://techride-backend.onrender.com
+API_URL=https://tech-ride.onrender.com/api
+SOCKET_URL=https://tech-ride.onrender.com
 GOOGLE_MAPS_API_KEY=your_key
 ```
 
@@ -318,7 +318,7 @@ cd backend && npm install && npm run build
 cd backend && npm start
 
 # Health Check
-curl https://techride-backend.onrender.com/health
+curl https://tech-ride.onrender.com/health
 ```
 
 ### Admin Dashboard (Render)
@@ -408,7 +408,7 @@ GOOGLE_MAPS_API_KEY=your_key
 - [ ] Environment variables set
 - [ ] MongoDB URI configured
 - [ ] Health check returns 200 OK
-- [ ] Backend URL: `https://techride-backend.onrender.com`
+- [ ] Backend URL: `https://tech-ride.onrender.com`
 
 ## Admin Dashboard Deployment
 - [ ] Render web service created
@@ -521,7 +521,7 @@ npm start
 # 🔗 Your Production URLs
 
 After deployment:
-- **Backend API**: `https://techride-backend.onrender.com`
+- **Backend API**: `https://tech-ride.onrender.com`
 - **Admin Dashboard**: `https://techride-admin.onrender.com`
 - **Rider App**: Play Store / App Store
 - **Driver App**: Play Store / App Store

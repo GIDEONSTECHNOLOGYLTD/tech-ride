@@ -76,6 +76,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://techride-backend.onrender.com/api
+        value: https://tech-ride.onrender.com/api
       - key: NEXT_PUBLIC_SOCKET_URL
-        value: https://techride-backend.onrender.com
+        value: https://tech-ride.onrender.com

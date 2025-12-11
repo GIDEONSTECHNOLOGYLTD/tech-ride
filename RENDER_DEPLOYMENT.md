@@ -115,7 +115,7 @@
 
 8. Wait 5-10 minutes for deployment. Your backend will be at:
    ```
-   https://techride-backend.onrender.com
+   https://tech-ride.onrender.com
    ```
 
 ### B. Admin Dashboard Deployment
@@ -139,8 +139,8 @@
 4. **Add Environment Variables:**
    ```env
    NODE_ENV=production
-   NEXT_PUBLIC_API_URL=https://techride-backend.onrender.com/api
-   NEXT_PUBLIC_SOCKET_URL=https://techride-backend.onrender.com
+   NEXT_PUBLIC_API_URL=https://tech-ride.onrender.com/api
+   NEXT_PUBLIC_SOCKET_URL=https://tech-ride.onrender.com
    ```
 
 5. **Click "Create Web Service"**
@@ -157,7 +157,7 @@
 ### Test Backend
 ```bash
 # Health check
-curl https://techride-backend.onrender.com/health
+curl https://tech-ride.onrender.com/health
 
 # Should return: {"status":"ok","timestamp":"..."}
 ```
@@ -175,7 +175,7 @@ curl https://techride-backend.onrender.com/health
 
 ### Option A: Using API
 ```bash
-curl -X POST https://techride-backend.onrender.com/api/auth/register \
+curl -X POST https://tech-ride.onrender.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "phoneNumber": "+2348012345678",
@@ -292,7 +292,7 @@ app.use(cors({
 
 2. **Setup Payment Webhooks**
    - Paystack Dashboard → Settings → Webhooks
-   - URL: `https://techride-backend.onrender.com/api/payments/webhook`
+   - URL: `https://tech-ride.onrender.com/api/payments/webhook`
 
 3. **Configure Firebase Push Notifications**
    - Add FCM credentials to environment
@@ -306,7 +306,7 @@ app.use(cors({
 ## 🎉 You're Live!
 
 Your **TechRide platform** is now live at:
-- **Backend API**: `https://techride-backend.onrender.com`
+- **Backend API**: `https://tech-ride.onrender.com`
 - **Admin Dashboard**: `https://techride-admin.onrender.com`
 
 **Total time to deploy: ~20 minutes** 🚀
