@@ -42,9 +42,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-router"
-    ],
     "extra": {
       "apiUrl": "https://tech-ride.onrender.com/api",
       "socketUrl": "https://tech-ride.onrender.com",
