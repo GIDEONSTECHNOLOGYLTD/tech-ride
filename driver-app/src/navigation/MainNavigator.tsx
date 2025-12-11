@@ -1,12 +1,30 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DashboardScreen from '../screens/main/DashboardScreen';
 import EarningsScreen from '../screens/main/EarningsScreen';
 import RideHistoryScreen from '../screens/main/RideHistoryScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import BankDetailsScreen from '../screens/main/BankDetailsScreen';
+import DocumentsScreen from '../screens/main/DocumentsScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
+import HelpScreen from '../screens/main/HelpScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+const ProfileStack = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="BankDetails" component={BankDetailsScreen} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
+    </Stack.Navigator>
+  );
+};
 
 const MainNavigator = () => {
   return (
@@ -35,7 +53,7 @@ const MainNavigator = () => {
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Earnings" component={EarningsScreen} />
       <Tab.Screen name="History" component={RideHistoryScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
 };

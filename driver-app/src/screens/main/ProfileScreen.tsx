@@ -109,25 +109,25 @@ const ProfileScreen = ({ navigation }: any) => {
       {/* Menu Items */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('BankDetails')}>
           <Icon name="bank" size={24} color="#666" />
           <Text style={styles.menuText}>Bank Details</Text>
           <Icon name="chevron-right" size={24} color="#CCC" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Documents')}>
           <Icon name="file-document" size={24} color="#666" />
           <Text style={styles.menuText}>Documents</Text>
           <Icon name="chevron-right" size={24} color="#CCC" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Settings')}>
           <Icon name="cog" size={24} color="#666" />
           <Text style={styles.menuText}>Settings</Text>
           <Icon name="chevron-right" size={24} color="#CCC" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Help')}>
           <Icon name="help-circle" size={24} color="#666" />
           <Text style={styles.menuText}>Help & Support</Text>
           <Icon name="chevron-right" size={24} color="#CCC" />
