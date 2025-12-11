@@ -152,7 +152,9 @@ const PaymentMethodScreen: React.FC<PaymentMethodScreenProps> = ({ navigation, r
       {/* Amount */}
       <View style={styles.amountCard}>
         <Text style={styles.amountLabel}>Amount to Pay</Text>
-        <Text style={styles.amountValue}>₦{amount.toLocaleString()}</Text>
+        <Text style={styles.amountValue}>
+          ₦{amount ? amount.toLocaleString() : '0.00'}
+        </Text>
       </View>
 
       {/* Payment Methods */}

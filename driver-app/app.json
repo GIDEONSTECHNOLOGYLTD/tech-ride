@@ -21,7 +21,8 @@
         "NSLocationWhenInUseUsageDescription": "TechRide Driver needs your location to show nearby ride requests",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TechRide Driver needs your location to navigate to pickup and dropoff points",
         "NSCameraUsageDescription": "Upload driver documents and profile photo",
-        "NSPhotoLibraryUsageDescription": "Upload driver documents and profile photo"
+        "NSPhotoLibraryUsageDescription": "Upload driver documents and profile photo",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
