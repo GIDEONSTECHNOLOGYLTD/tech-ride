@@ -24,8 +24,8 @@ api.interceptors.request.use(
 
 // Auth API
 export const authAPI = {
-  login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
+  login: (phoneNumber: string, password: string) =>
+    api.post('/auth/login', { phoneNumber, password }),
 };
 
 // Dashboard API

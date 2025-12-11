@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BarChart3, Users, Car, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { dashboardAPI, driversAPI, ridesAPI } from '../src/lib/api';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [recentRides, setRecentRides] = useState<any[]>([]);
   const [pendingDrivers, setPendingDrivers] = useState<any[]>([]);
@@ -12,8 +14,13 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     loadDashboardData();
-  }, []);
+  }, [router]);
 
   const loadDashboardData = async () => {
     try {
@@ -29,7 +36,12 @@ export default function Dashboard() {
       setPendingDrivers(driversRes.data.drivers);
     } catch (err: any) {
       console.error('Dashboard load error:', err);
-      setError(err.response?.data?.error || 'Failed to load dashboard data')
+      if (err.response?.status === 401) {
+        localStorage.removeItem('adminToken');
+        router.push('/login');
+      } else {
+        setError(err.response?.data?.error || 'Failed to load dashboard data');
+      }
     } finally {
       setLoading(false);
     }
