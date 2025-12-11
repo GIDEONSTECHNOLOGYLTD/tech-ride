@@ -24,8 +24,11 @@ const EarningsScreen = ({ navigation }: any) => {
     try {
       const response = await driverAPI.getEarnings(period);
       setEarnings(response.data.earnings);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load earnings error:', error);
+      if (error.response?.status === 404) {
+        setEarnings({ totalEarnings: 0, totalRides: 0, totalDistance: 0, averagePerRide: 0, rides: [] });
+      }
     } finally {
       setLoading(false);
     }

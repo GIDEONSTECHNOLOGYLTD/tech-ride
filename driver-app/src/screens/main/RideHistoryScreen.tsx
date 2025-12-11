@@ -34,8 +34,11 @@ const RideHistoryScreen = () => {
       } else {
         setRides([...rides, ...newRides]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load rides error:', error);
+      if (error.response?.status === 404) {
+        setHasMore(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -113,7 +116,11 @@ const RideHistoryScreen = () => {
         renderItem={renderRide}
         keyExtractor={(item: any) => item._id}
         contentContainerStyle={styles.listContent}
-        onEndReached={() => setPage(page + 1)}
+        onEndReached={() => {
+          if (!loading && hasMore) {
+            setPage(page + 1);
+          }
+        }}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           loading ? (
