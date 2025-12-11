@@ -78,7 +78,7 @@ const PaymentMethodScreen: React.FC<PaymentMethodScreenProps> = ({ navigation, r
 
     Alert.alert(
       'Pay with Wallet',
-      `Pay ₦${amount.toLocaleString()} from your wallet?`,
+      `Pay ₦${amount ? amount.toLocaleString() : '0.00'} from your wallet?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
