@@ -4,6 +4,8 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { userAPI } from '../services/api.service';
+import socketService from '../services/socket.service';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,25 +17,49 @@ export default function HomeScreen() {
 
   useEffect(() => {
     requestLocationPermission();
-  }, []);
+    socketService.connect();
+    
+    // Refresh drivers every 10 seconds
+    const interval = setInterval(() => {
+      if (location) {
+        fetchNearbyDrivers(location.latitude, location.longitude);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [location?.latitude, location?.longitude]);
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status === 'granted') {
       const currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation({
+      const coords = {
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
-      });
+      };
+      setLocation(coords);
       
-      // Simulate nearby drivers
-      setNearbyDrivers([
-        { id: 1, latitude: currentLocation.coords.latitude + 0.002, longitude: currentLocation.coords.longitude + 0.002 },
-        { id: 2, latitude: currentLocation.coords.latitude - 0.003, longitude: currentLocation.coords.longitude + 0.001 },
-        { id: 3, latitude: currentLocation.coords.latitude + 0.001, longitude: currentLocation.coords.longitude - 0.003 },
-      ]);
+      // Fetch real nearby drivers from API
+      fetchNearbyDrivers(coords.latitude, coords.longitude);
+    }
+  };
+
+  const fetchNearbyDrivers = async (latitude: number, longitude: number) => {
+    try {
+      const response = await userAPI.getNearbyDrivers(latitude, longitude, 5);
+      const drivers = response.data.drivers || [];
+      setNearbyDrivers(drivers.map((driver: any) => ({
+        id: driver._id,
+        latitude: driver.currentLocation?.coordinates[1],
+        longitude: driver.currentLocation?.coordinates[0],
+        name: driver.firstName,
+        vehicleType: driver.vehicleType,
+      })));
+    } catch (error) {
+      console.error('Failed to fetch nearby drivers:', error);
+      setNearbyDrivers([]);
     }
   };
 
