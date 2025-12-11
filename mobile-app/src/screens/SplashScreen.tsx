@@ -13,23 +13,25 @@ export default function SplashScreen() {
   const checkAuth = async () => {
     setTimeout(async () => {
       const token = await AsyncStorage.getItem('authToken');
+      const userRole = await AsyncStorage.getItem('userRole');
       const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
 
-      if (token) {
+      // Only allow RIDER role
+      if (token && userRole === 'RIDER') {
         navigation.navigate('Home' as never);
       } else if (hasOnboarded) {
         navigation.navigate('Login' as never);
       } else {
         navigation.navigate('Onboarding' as never);
       }
-    }, 2000);
+    }, 1500);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>🚗</Text>
-      <Text style={styles.title}>RideShare</Text>
-      <Text style={styles.subtitle}>Better rides, better prices</Text>
+      <Text style={styles.title}>TechRide</Text>
+      <Text style={styles.subtitle}>Your ride, your way</Text>
     </View>
   );
 }

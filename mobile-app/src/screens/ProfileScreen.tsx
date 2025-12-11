@@ -1,10 +1,55 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { userAPI } from '../services/api.service';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const response = await userAPI.getProfile();
+      setUser(response.data.user);
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.multiRemove(['authToken', 'userId', 'userRole', 'userData']);
+            navigation.navigate('Login' as never);
+          },
+        },
+      ]
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -20,11 +65,12 @@ export default function ProfileScreen() {
         <View style={styles.avatar}>
           <Ionicons name="person" size={48} color="#4F46E5" />
         </View>
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.phone}>+1 234 567 8900</Text>
+        <Text style={styles.name}>{user?.firstName} {user?.lastName}</Text>
+        <Text style={styles.phone}>{user?.phoneNumber}</Text>
+        {user?.email && <Text style={styles.email}>{user?.email}</Text>}
         <View style={styles.ratingBadge}>
           <Ionicons name="star" size={16} color="#FCD34D" />
-          <Text style={styles.rating}>4.9</Text>
+          <Text style={styles.rating}>{user?.rating?.toFixed(1) || '5.0'}</Text>
         </View>
       </View>
 
@@ -56,7 +102,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color="#EF4444" />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -71,7 +117,8 @@ const styles = StyleSheet.create({
   profileCard: { alignItems: 'center', padding: 30 },
   avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   name: { fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
-  phone: { fontSize: 16, color: '#6B7280', marginBottom: 12 },
+  phone: { fontSize: 16, color: '#6B7280', marginBottom: 4 },
+  email: { fontSize: 14, color: '#9CA3AF', marginBottom: 12 },
   ratingBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   rating: { fontSize: 16, fontWeight: 'bold', marginLeft: 4 },
   menuSection: { padding: 20 },
