@@ -1,37 +1,121 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import socketService from '../services/socket.service';
+import { rideAPI } from '../services/api.service';
 
 const { width } = Dimensions.get('window');
 
 export default function RideTrackingScreen() {
   const navigation = useNavigation();
-  const [rideStatus, setRideStatus] = useState('SEARCHING'); // SEARCHING, ACCEPTED, ARRIVED, IN_PROGRESS, COMPLETED
+  const route = useRoute();
+  const { rideId } = route.params as any;
+  const [ride, setRide] = useState<any>(null);
+  const [rideStatus, setRideStatus] = useState('PENDING');
   const [driver, setDriver] = useState<any>(null);
-  const [eta, setEta] = useState('3 min');
+  const [driverLocation, setDriverLocation] = useState<any>(null);
+  const [eta, setEta] = useState('Calculating...');
 
   useEffect(() => {
-    // Simulate ride flow
-    setTimeout(() => {
-      setRideStatus('ACCEPTED');
-      setDriver({
-        name: 'John Doe',
-        rating: 4.9,
-        vehicle: 'Toyota Camry',
-        plate: 'ABC 123',
-        phone: '+1234567890',
-      });
-    }, 3000);
+    if (!rideId) {
+      Alert.alert('Error', 'No ride ID provided');
+      navigation.goBack();
+      return;
+    }
 
-    setTimeout(() => setRideStatus('ARRIVED'), 8000);
-    setTimeout(() => setRideStatus('IN_PROGRESS'), 12000);
-  }, []);
+    loadRideDetails();
+    setupSocketListeners();
+    socketService.connect();
+
+    return () => {
+      socketService.leaveRide(rideId);
+      socketService.removeAllListeners();
+    };
+  }, [rideId]);
+
+  const loadRideDetails = async () => {
+    try {
+      const response = await rideAPI.getRideDetails(rideId);
+      const rideData = response.data.ride;
+      setRide(rideData);
+      setRideStatus(rideData.status);
+      if (rideData.driver) {
+        setDriver(rideData.driver);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load ride details');
+    }
+  };
+
+  const setupSocketListeners = () => {
+    socketService.joinRide(rideId);
+
+    socketService.onRideAccepted((data) => {
+      setRideStatus('ACCEPTED');
+      setDriver(data.driver);
+      Alert.alert('Driver Found!', `${data.driver.name} is on the way`);
+    });
+
+    socketService.onDriverArrived(() => {
+      setRideStatus('ARRIVED');
+      Alert.alert('Driver Arrived', 'Your driver has arrived');
+    });
+
+    socketService.onRideStarted(() => {
+      setRideStatus('IN_PROGRESS');
+      Alert.alert('Ride Started', 'Enjoy your ride!');
+    });
+
+    socketService.onRideCompleted((data) => {
+      setRideStatus('COMPLETED');
+      Alert.alert(
+        'Ride Completed',
+        `Total fare: ₦${data.fare.toFixed(2)}`,
+        [{ text: 'OK', onPress: () => navigation.navigate('Home' as never) }]
+      );
+    });
+
+    socketService.onRideCancelled((data) => {
+      Alert.alert(
+        'Ride Cancelled',
+        data.reason || 'The ride has been cancelled',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    });
+
+    socketService.onDriverLocationUpdate((data) => {
+      setDriverLocation(data.location);
+      setEta(data.eta || 'Calculating...');
+    });
+  };
+
+  const handleCancelRide = () => {
+    Alert.alert(
+      'Cancel Ride',
+      'Are you sure you want to cancel this ride?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await rideAPI.cancelRide(rideId, 'Cancelled by rider');
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to cancel ride');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const renderStatusContent = () => {
     switch (rideStatus) {
-      case 'SEARCHING':
+      case 'PENDING':
         return (
           <View style={styles.statusContainer}>
             <View style={styles.loadingDots}>
@@ -41,7 +125,7 @@ export default function RideTrackingScreen() {
             </View>
             <Text style={styles.statusTitle}>Finding your driver...</Text>
             <Text style={styles.statusSubtitle}>This usually takes less than a minute</Text>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancelRide}>
               <Text style={styles.cancelButtonText}>Cancel Request</Text>
             </TouchableOpacity>
           </View>

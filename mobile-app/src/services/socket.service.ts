@@ -53,9 +53,27 @@ class SocketService {
     this.socket?.on('ride-completed', callback);
   }
 
+  onDriverLocationUpdate(callback: (data: any) => void) {
+    this.socket?.on('driver-location-update', callback);
+  }
+
   // Driver location updates
   updateLocation(latitude: number, longitude: number) {
     this.socket?.emit('update-location', { latitude, longitude });
+  }
+
+  // Join ride room
+  joinRide(rideId: string) {
+    this.socket?.emit('join-ride', rideId);
+  }
+
+  leaveRide(rideId: string) {
+    this.socket?.emit('leave-ride', rideId);
+  }
+
+  // Cancel ride
+  cancelRide(rideId: string, reason: string) {
+    this.socket?.emit('cancel-ride', { rideId, reason });
   }
 
   // Messages
@@ -65,6 +83,11 @@ class SocketService {
 
   onNewMessage(callback: (data: any) => void) {
     this.socket?.on('new-message', callback);
+  }
+
+  // Remove listeners
+  removeAllListeners() {
+    this.socket?.removeAllListeners();
   }
 }
 
