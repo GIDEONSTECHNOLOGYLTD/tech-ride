@@ -20,6 +20,8 @@ import PaymentMethodScreen from './src/screens/PaymentMethodScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import PromoCodesScreen from './src/screens/PromoCodesScreen';
 
 // Services
 import { initializeApp } from './src/services/app.service';
@@ -57,6 +59,8 @@ export default function App() {
             <Stack.Screen name="RideHistory" component={RideHistoryScreen} />
             <Stack.Screen name="Wallet" component={WalletScreen} />
             <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="PromoCodes" component={PromoCodesScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>

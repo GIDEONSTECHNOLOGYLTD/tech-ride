@@ -93,12 +93,12 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>Ride History</Text>
           <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('PromoCodes' as never)}>
           <Ionicons name="gift-outline" size={24} color="#4F46E5" />
           <Text style={styles.menuText}>Promo Codes</Text>
           <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Settings' as never)}>
           <Ionicons name="settings-outline" size={24} color="#4F46E5" />
           <Text style={styles.menuText}>Settings</Text>
           <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
