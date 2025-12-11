@@ -29,7 +29,7 @@ export default function Dashboard() {
       setPendingDrivers(driversRes.data.drivers);
     } catch (err: any) {
       console.error('Dashboard load error:', err);
-      setError(err.response?.data?.error || 'Failed to load dashboard data');
+      setError(err.response?.data?.error || 'Failed to load dashboard data')
     } finally {
       setLoading(false);
     }

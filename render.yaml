@@ -1,0 +1,81 @@
+services:
+  # Backend API
+  - type: web
+    name: techride-backend
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 7d
+      - key: REDIS_URL
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: COMMISSION_RATE
+        value: "0.15"
+      - key: BASE_FARE_ECONOMY
+        value: "500"
+      - key: BASE_FARE_COMFORT
+        value: "800"
+      - key: BASE_FARE_XL
+        value: "1200"
+      - key: BASE_FARE_BIKE
+        value: "300"
+      - key: COST_PER_KM_ECONOMY
+        value: "120"
+      - key: COST_PER_KM_COMFORT
+        value: "150"
+      - key: COST_PER_KM_XL
+        value: "200"
+      - key: COST_PER_KM_BIKE
+        value: "80"
+      - key: COST_PER_MINUTE
+        value: "30"
+      - key: REFERRER_REWARD
+        value: "1000"
+      - key: REFERRED_USER_REWARD
+        value: "500"
+    healthCheckPath: /health
+
+  # Admin Dashboard
+  - type: web
+    name: techride-admin
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: cd admin-dashboard && npm install && npm run build
+    startCommand: cd admin-dashboard && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://techride-backend.onrender.com/api
+      - key: NEXT_PUBLIC_SOCKET_URL
+        value: https://techride-backend.onrender.com
