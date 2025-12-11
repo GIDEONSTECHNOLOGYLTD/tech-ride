@@ -1,15 +1,14 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = __DEV__ 
-  ? 'http://localhost:5000/api' 
-  : 'https://api.techride.ng/api';
+const API_URL = 'https://tech-ride.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
@@ -20,9 +19,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+    console.log('🌐 Full URL:', (config.baseURL || '') + (config.url || ''));
+    console.log('🌐 Headers:', config.headers);
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );

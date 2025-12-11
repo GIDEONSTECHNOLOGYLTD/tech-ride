@@ -2,7 +2,7 @@
 // Using REST API polling instead
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SOCKET_URL = __DEV__ ? 'http://localhost:5000' : 'https://api.techride.ng';
+const SOCKET_URL = 'https://tech-ride.onrender.com';
 
 class SocketService {
   private connected: boolean = false;
