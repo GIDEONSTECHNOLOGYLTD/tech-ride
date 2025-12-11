@@ -23,23 +23,14 @@ export default function LoginScreen() {
       const response = await authAPI.login({ phoneNumber, password });
       const { token, user } = response.data;
 
-      // Check if user is a RIDER
-      if (user.role !== 'RIDER') {
+      // Block only DRIVER role (allow RIDER and ADMIN)
+      if (user.role === 'DRIVER') {
         setLoading(false);
-        
-        if (user.role === 'ADMIN') {
-          Alert.alert(
-            'Admin Account Detected',
-            'This is the Rider app. Admins should use the Admin Dashboard at:\n\nhttps://techride-admin.onrender.com',
-            [{ text: 'OK' }]
-          );
-        } else if (user.role === 'DRIVER') {
-          Alert.alert(
-            'Driver Account Detected',
-            'This is the Rider app. Drivers should use the TechRide Driver app.',
-            [{ text: 'OK' }]
-          );
-        }
+        Alert.alert(
+          'Driver Account Detected',
+          'This is the Rider app. Drivers should use the TechRide Driver app.',
+          [{ text: 'OK' }]
+        );
         return;
       }
 
@@ -118,9 +109,8 @@ export default function LoginScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle" size={20} color="#3B82F6" />
           <Text style={styles.infoText}>
-            This is the TechRide Rider app. {'\n'}
-            Admins use: techride-admin.onrender.com{'\n'}
-            Drivers use: TechRide Driver app
+            Riders and Admins can use this app.{' \n'}
+            Drivers should use the TechRide Driver app.
           </Text>
         </View>
 

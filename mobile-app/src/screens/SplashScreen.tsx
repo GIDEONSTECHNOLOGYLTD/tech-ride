@@ -16,8 +16,8 @@ export default function SplashScreen() {
       const userRole = await AsyncStorage.getItem('userRole');
       const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
 
-      // Only allow RIDER role
-      if (token && userRole === 'RIDER') {
+      // Allow RIDER and ADMIN roles
+      if (token && (userRole === 'RIDER' || userRole === 'ADMIN')) {
         navigation.navigate('Home' as never);
       } else if (hasOnboarded) {
         navigation.navigate('Login' as never);

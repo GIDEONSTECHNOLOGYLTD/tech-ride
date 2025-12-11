@@ -53,7 +53,7 @@ export default function RegisterScreen() {
       <Text style={styles.title}>Create Rider Account</Text>
       <View style={styles.infoBox}>
         <Ionicons name="information-circle" size={20} color="#3B82F6" />
-        <Text style={styles.infoText}>You're registering as a Rider. This app is for passengers only.</Text>
+        <Text style={styles.infoText}>You're registering as a Rider (passenger). Admin accounts are created separately.</Text>
       </View>
       
       <View style={styles.inputContainer}>
