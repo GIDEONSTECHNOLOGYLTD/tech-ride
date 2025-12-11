@@ -188,7 +188,7 @@ export default function RideTrackingScreen() {
         return (
           <View style={styles.statusContainer}>
             <View style={styles.progressHeader}>
-              <Ionicons name="navigation" size={24} color="#4F46E5" />
+              <Ionicons name="navigate" size={24} color="#4F46E5" />
               <View style={styles.progressInfo}>
                 <Text style={styles.progressTitle}>On your way</Text>
                 <Text style={styles.progressSubtitle}>15 min • 5.2 km</Text>

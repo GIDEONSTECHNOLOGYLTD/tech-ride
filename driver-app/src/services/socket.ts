@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SOCKET_URL = __DEV__ ? 'http://localhost:5000' : 'https://api.techride.ng';
 
 class SocketService {
-  private socket: Socket | null = null;
+  private connected: boolean = false;
   private listeners: Map<string, Function[]> = new Map();
 
   async connect() {
@@ -16,67 +16,22 @@ class SocketService {
       return;
     }
 
-    this.socket = io(SOCKET_URL, {
-      auth: { token },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    });
-
-    this.socket.on('connect', () => {
-      console.log('✅ Socket connected');
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
-    });
-
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-    });
-
-    // Setup event listeners
-    this.setupListeners();
+    this.connected = true;
+    console.log('✅ Driver connected (polling mode)');
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
+    this.connected = false;
+    console.log('❌ Driver disconnected');
   }
 
   private setupListeners() {
-    if (!this.socket) return;
-
-    // New ride request
-    this.socket.on('new-ride-request', (data) => {
-      this.emit('new-ride-request', data);
-    });
-
-    // Ride cancelled by rider
-    this.socket.on('ride-cancelled', (data) => {
-      this.emit('ride-cancelled', data);
-    });
-
-    // Message from rider
-    this.socket.on('new-message', (data) => {
-      this.emit('new-message', data);
-    });
-
-    // Emergency SOS
-    this.socket.on('emergency-alert', (data) => {
-      this.emit('emergency-alert', data);
-    });
+    // No socket listeners in polling mode
   }
 
   // Emit event to backend
   send(event: string, data?: any) {
-    if (this.socket) {
-      this.socket.emit(event, data);
-    }
+    console.log('Send via API:', event, data);
   }
 
   // Update driver location
