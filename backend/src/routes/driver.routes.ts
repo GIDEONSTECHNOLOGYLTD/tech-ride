@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate, authorizeRole } from '../middleware/auth.middleware';
+import { uploadFields } from '../middleware/upload.middleware';
 import {
   registerDriver,
   getDriverProfile,
@@ -15,8 +16,13 @@ import {
 const router = express.Router();
 router.use(authenticate);
 
-// Registration (before becoming driver)
-router.post('/register', registerDriver);
+// Registration (before becoming driver) - with file uploads
+router.post('/register', uploadFields([
+  { name: 'licensePhoto', maxCount: 1 },
+  { name: 'vehicleRegistration', maxCount: 1 },
+  { name: 'insurance', maxCount: 1 },
+  { name: 'profilePhoto', maxCount: 1 },
+]), registerDriver);
 
 // Driver-only routes
 router.use(authorizeRole('DRIVER'));

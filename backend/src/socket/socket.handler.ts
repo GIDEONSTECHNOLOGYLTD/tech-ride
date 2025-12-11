@@ -26,8 +26,6 @@ export function initializeSocketHandlers(io: Server) {
     const userId = (socket as any).userId;
     const role = (socket as any).role;
 
-    console.log(`✅ User connected: ${userId} (${role})`);
-
     // Join user-specific rooms
     socket.join(`user_${userId}`);
     if (role === 'DRIVER') {
@@ -64,7 +62,7 @@ export function initializeSocketHandlers(io: Server) {
             }
           }
         } catch (error) {
-          console.error('❌ Update location error:', error);
+          socket.emit('error', { message: 'Failed to update location' });
         }
       }
     });
@@ -83,11 +81,9 @@ export function initializeSocketHandlers(io: Server) {
               driver.lastOnline = new Date();
             }
             await driver.save();
-
-            console.log(`🚗 Driver ${userId} is now ${data.isOnline ? 'online' : 'offline'}`);
           }
         } catch (error) {
-          console.error('❌ Update status error:', error);
+          socket.emit('error', { message: 'Failed to update status' });
         }
       }
     });
@@ -106,11 +102,9 @@ export function initializeSocketHandlers(io: Server) {
             rideId: ride._id,
             arrivedAt: ride.arrivedAt,
           });
-
-          console.log(`🎯 Driver arrived at pickup for ride ${rideId}`);
         }
       } catch (error) {
-        console.error('❌ Driver arrived error:', error);
+        socket.emit('error', { message: 'Failed to update arrival status' });
       }
     });
 
@@ -127,7 +121,7 @@ export function initializeSocketHandlers(io: Server) {
             await user.save();
           }
         } catch (error) {
-          console.error('❌ Rider location update error:', error);
+          socket.emit('error', { message: 'Failed to update location' });
         }
       }
     });
@@ -141,10 +135,8 @@ export function initializeSocketHandlers(io: Server) {
           senderId: userId,
           timestamp: new Date(),
         });
-
-        console.log(`💬 Message sent from ${userId} to ${data.recipientId}`);
       } catch (error) {
-        console.error('❌ Send message error:', error);
+        socket.emit('error', { message: 'Failed to send message' });
       }
     });
 
@@ -179,12 +171,10 @@ export function initializeSocketHandlers(io: Server) {
                   phone: driverUser?.phoneNumber,
                 },
               });
-
-              console.log(`✅ Ride ${rideId} accepted by driver ${userId}`);
             }
           }
         } catch (error) {
-          console.error('❌ Accept ride error:', error);
+          socket.emit('error', { message: 'Failed to accept ride' });
         }
       }
     });
@@ -235,17 +225,14 @@ export function initializeSocketHandlers(io: Server) {
             timestamp: new Date(),
           });
 
-          console.log(`🚨 EMERGENCY SOS from ${userId} for ride ${data.rideId}`);
         }
       } catch (error) {
-        console.error('❌ Emergency SOS error:', error);
+        socket.emit('error', { message: 'Failed to send emergency alert' });
       }
     });
 
     // Disconnect handler
     socket.on('disconnect', () => {
-      console.log(`👋 User disconnected: ${userId}`);
-      
       // Update driver status to offline if it's a driver
       if (role === 'DRIVER') {
         Driver.findOne({ userId }).then((driver) => {

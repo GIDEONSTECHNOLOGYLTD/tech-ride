@@ -4,6 +4,7 @@ import User from '../models/User';
 import Ride from '../models/Ride';
 import Payment from '../models/Payment';
 import paystackService from '../services/paystack.service';
+import logger from '../utils/logger.util';
 
 export const registerDriver = async (req: Request, res: Response) => {
   try {
@@ -17,9 +18,6 @@ export const registerDriver = async (req: Request, res: Response) => {
       licensePlate,
       licenseNumber,
       licenseExpiry,
-      licensePhoto,
-      vehicleRegistration,
-      insurance,
     } = req.body;
 
     // Check if driver already exists
@@ -27,6 +25,13 @@ export const registerDriver = async (req: Request, res: Response) => {
     if (existingDriver) {
       return res.status(400).json({ error: 'Driver profile already exists' });
     }
+
+    // Get uploaded file paths
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const licensePhoto = files?.licensePhoto?.[0]?.path;
+    const vehicleRegistration = files?.vehicleRegistration?.[0]?.path;
+    const insurance = files?.insurance?.[0]?.path;
+    const profilePhoto = files?.profilePhoto?.[0]?.path;
 
     // Create driver
     const driver = new Driver({
@@ -43,6 +48,7 @@ export const registerDriver = async (req: Request, res: Response) => {
         licensePhoto,
         vehicleRegistration,
         insurance,
+        profilePhoto,
       },
       verificationStatus: 'PENDING',
       isApproved: false,
@@ -62,7 +68,7 @@ export const registerDriver = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error('Register driver error:', error);
+    logger.error('Register driver failed', error);
     res.status(500).json({ error: 'Failed to register driver', details: error.message });
   }
 };
@@ -82,7 +88,7 @@ export const getDriverProfile = async (req: Request, res: Response) => {
       driver,
     });
   } catch (error: any) {
-    console.error('Get driver profile error:', error);
+    logger.error('Get driver profile failed', error);
     res.status(500).json({ error: 'Failed to get driver profile', details: error.message });
   }
 };

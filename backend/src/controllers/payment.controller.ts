@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import Payment from '../models/Payment';
 import User from '../models/User';
 import Ride from '../models/Ride';
 import paystackService from '../services/paystack.service';
 import cryptoService from '../services/crypto.service';
+import logger from '../utils/logger.util';
 
 export const initializePayment = async (req: Request, res: Response) => {
   try {
@@ -283,7 +285,7 @@ export const verifyCryptoPayment = async (req: Request, res: Response) => {
       });
     }
   } catch (error: any) {
-    console.error('Verify crypto payment error:', error);
+    logger.error('Verify crypto payment failed', error);
     res.status(500).json({ error: 'Failed to verify crypto payment', details: error.message });
   }
 };
@@ -292,9 +294,18 @@ export const handleWebhook = async (req: Request, res: Response) => {
   try {
     const event = req.body;
 
-    // Verify webhook signature (important!)
-    const signature = req.headers['x-paystack-signature'];
-    // Add signature verification here
+    // Verify webhook signature
+    const signature = req.headers['x-paystack-signature'] as string;
+    const secret = process.env.PAYSTACK_SECRET_KEY || '';
+    
+    const hash = crypto.createHmac('sha512', secret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+    
+    if (hash !== signature) {
+      logger.warn('Invalid webhook signature', { signature });
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
 
     if (event.event === 'charge.success') {
       const { reference } = event.data;
@@ -309,12 +320,14 @@ export const handleWebhook = async (req: Request, res: Response) => {
         await Ride.findByIdAndUpdate(payment.rideId, {
           paymentStatus: 'COMPLETED',
         });
+
+        logger.info('Payment webhook processed', { reference, paymentId: payment._id });
       }
     }
 
     res.status(200).json({ received: true });
   } catch (error: any) {
-    console.error('Webhook error:', error);
+    logger.error('Webhook processing failed', error);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 };
@@ -343,7 +356,7 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error('Get payment history error:', error);
+    logger.error('Get payment history failed', error);
     res.status(500).json({ error: 'Failed to get payment history', details: error.message });
   }
 };
