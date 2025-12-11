@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { userAPI } from '../services/api.service';
 import socketService from '../services/socket.service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,8 +15,10 @@ export default function HomeScreen() {
   const mapRef = useRef<MapView>(null);
   const [location, setLocation] = useState<any>(null);
   const [nearbyDrivers, setNearbyDrivers] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
+    checkUserRole();
     requestLocationPermission();
     socketService.connect();
     
@@ -28,6 +31,11 @@ export default function HomeScreen() {
 
     return () => clearInterval(interval);
   }, [location?.latitude, location?.longitude]);
+
+  const checkUserRole = async () => {
+    const role = await AsyncStorage.getItem('userRole');
+    setUserRole(role || '');
+  };
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -98,6 +106,14 @@ export default function HomeScreen() {
           <Ionicons name="person-circle" size={32} color="#4F46E5" />
         </TouchableOpacity>
         <View style={styles.topMenuRight}>
+          {userRole === 'ADMIN' && (
+            <TouchableOpacity 
+              style={[styles.menuButton, styles.adminButton]} 
+              onPress={() => navigation.navigate('AdminDashboard' as never)}
+            >
+              <Ionicons name="shield-checkmark" size={24} color="#FFF" />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Wallet' as never)}>
             <Ionicons name="wallet" size={24} color="#4F46E5" />
           </TouchableOpacity>
@@ -163,9 +179,9 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     backgroundColor: '#fff',
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -173,6 +189,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  adminButton: {
+    backgroundColor: '#4F46E5',
   },
   bottomPanel: {
     position: 'absolute',

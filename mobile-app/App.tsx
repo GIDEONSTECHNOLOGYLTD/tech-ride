@@ -19,6 +19,7 @@ import WalletScreen from './src/screens/WalletScreen';
 import PaymentMethodScreen from './src/screens/PaymentMethodScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 
 // Services
 import { initializeApp } from './src/services/app.service';
@@ -48,6 +49,7 @@ export default function App() {
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
             <Stack.Screen name="RideRequest" component={RideRequestScreen} />
             <Stack.Screen name="RideTracking" component={RideTrackingScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
