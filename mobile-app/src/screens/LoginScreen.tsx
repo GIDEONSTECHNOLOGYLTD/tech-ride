@@ -92,10 +92,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
-
         {error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle" size={20} color="#EF4444" />
