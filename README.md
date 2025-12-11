@@ -20,13 +20,16 @@
 
 ### Backend
 - **Node.js** + **Express** + **TypeScript**
-- **PostgreSQL** + **Prisma ORM**
+- **MongoDB** + **Mongoose ODM**
 - **Socket.IO** for real-time communication
 - **Redis** for caching and queues
 - **JWT** authentication
-- **Stripe** payment processing
+- **Paystack** payment processing (Nigerian payments)
+- **Crypto Payments** (BTC, ETH, USDT)
 - **Twilio** SMS notifications
 - **Firebase** push notifications
+- **AI-Powered Dynamic Pricing**
+- **Multi-language Support** (5 languages)
 
 ### Admin Dashboard
 - **Next.js 14** (React framework)
@@ -46,19 +49,21 @@
 ```
 ride-hailing-platform/
 ├── backend/                 # Node.js backend API
-│   ├── prisma/             # Database schema
 │   ├── src/
+│   │   ├── models/         # MongoDB/Mongoose models
 │   │   ├── controllers/    # Request handlers
 │   │   ├── routes/         # API routes
 │   │   ├── middleware/     # Auth, validation
 │   │   ├── socket/         # Real-time handlers
+│   │   ├── config/         # Database & configs
 │   │   ├── utils/          # Helper functions
 │   │   └── server.ts       # Main server file
 │   └── package.json
 ├── admin-dashboard/         # Next.js admin panel
 │   ├── app/                # Next.js 14 app directory
 │   └── package.json
-├── mobile-app/             # React Native app (to be created)
+├── driver-app/             # React Native driver app
+├── mobile-app/             # React Native rider app
 └── package.json            # Root package file
 ```
 
@@ -67,10 +72,10 @@ ride-hailing-platform/
 ### Prerequisites
 
 - Node.js 18+ and npm
-- PostgreSQL 14+
-- Redis 6+
+- **MongoDB 6+** (local or MongoDB Atlas)
+- Redis 6+ (optional, for caching)
 - Twilio account (for SMS)
-- Stripe account (for payments)
+- Paystack account (for Nigerian payments)
 - Firebase project (for push notifications)
 - Google Maps API key
 
@@ -86,11 +91,21 @@ ride-hailing-platform/
    npm run install:all
    ```
 
-3. **Setup PostgreSQL database**
+3. **Setup MongoDB database**
+   
+   **Option A: Local MongoDB**
    ```bash
-   # Create database
-   createdb ridehailing
+   # Install MongoDB (macOS with Homebrew)
+   brew tap mongodb/brew
+   brew install mongodb-community@6.0
+   brew services start mongodb-community@6.0
    ```
+   
+   **Option B: MongoDB Atlas (Cloud - Recommended)**
+   - Sign up at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
+   - Create a free cluster
+   - Get your connection string
+   - Use it in the `.env` file
 
 4. **Configure environment variables**
    ```bash
@@ -99,14 +114,7 @@ ride-hailing-platform/
    # Edit .env with your credentials
    ```
 
-5. **Run database migrations**
-   ```bash
-   cd backend
-   npm run prisma:migrate
-   npm run prisma:generate
-   ```
-
-6. **Start development servers**
+5. **Start development servers**
    ```bash
    # From root directory
    npm run dev
@@ -131,8 +139,10 @@ ride-hailing-platform/
 PORT=5000
 NODE_ENV=development
 
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/ridehailing"
+# Database (MongoDB)
+MONGODB_URI="mongodb://localhost:27017/techride"
+# For MongoDB Atlas (cloud):
+# MONGODB_URI="mongodb+srv://username:password@cluster.mongodb.net/techride?retryWrites=true&w=majority"
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-change-this
@@ -149,21 +159,40 @@ TWILIO_ACCOUNT_SID=your-twilio-account-sid
 TWILIO_AUTH_TOKEN=your-twilio-auth-token
 TWILIO_PHONE_NUMBER=your-twilio-phone-number
 
-# Stripe
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+# Paystack (Nigerian Payments - PRIMARY)
+PAYSTACK_SECRET_KEY=sk_test_your_paystack_secret_key
+PAYSTACK_PUBLIC_KEY=pk_test_your_paystack_public_key
+
+# Crypto Payment Addresses (Optional)
+CRYPTO_WALLET_BTC=your_bitcoin_address
+CRYPTO_WALLET_ETH=your_ethereum_address
+CRYPTO_WALLET_USDT=your_usdt_trc20_address
+ETH_RPC_URL=https://mainnet.infura.io/v3/YOUR_INFURA_KEY
+
+# Weather API (for AI-powered pricing)
+OPENWEATHER_API_KEY=your_openweather_api_key
 
 # Firebase
 FIREBASE_PROJECT_ID=your-firebase-project-id
 FIREBASE_PRIVATE_KEY=your-firebase-private-key
 FIREBASE_CLIENT_EMAIL=your-firebase-client-email
 
-# Pricing
+# App Config (Nigerian Naira pricing)
 COMMISSION_RATE=0.15
-BASE_FARE=2.50
-COST_PER_KM=1.20
-COST_PER_MINUTE=0.30
+BASE_FARE_ECONOMY=500
+BASE_FARE_COMFORT=800
+BASE_FARE_XL=1200
+BASE_FARE_BIKE=300
+COST_PER_KM_ECONOMY=120
+COST_PER_KM_COMFORT=150
+COST_PER_KM_XL=200
+COST_PER_KM_BIKE=80
+COST_PER_MINUTE=30
 SURGE_MULTIPLIER_MAX=2.5
+
+# Referral Rewards (in Naira)
+REFERRER_REWARD=1000
+REFERRED_USER_REWARD=500
 ```
 
 ## 📱 API Endpoints
@@ -219,15 +248,21 @@ SURGE_MULTIPLIER_MAX=2.5
 
 ## 🗄️ Database Schema
 
-The platform uses PostgreSQL with Prisma ORM. Key models include:
+The platform uses **MongoDB** with **Mongoose ODM**. Key collections include:
 
-- **User**: Riders and drivers
-- **Driver**: Driver-specific information
-- **Ride**: Ride details and status
-- **Payment**: Payment transactions
-- **Rating**: Ride ratings
-- **PromoCode**: Promotional codes
-- **SurgeZone**: Dynamic pricing zones
+- **User**: Riders and drivers with wallet, crypto support, referral codes
+- **Driver**: Driver-specific information, vehicle details, earnings
+- **Ride**: Ride details, status, AI pricing factors, crypto payments
+- **Payment**: Payment transactions (Paystack, crypto, wallet, cash)
+- **PromoCode**: Promotional codes with usage tracking
+- **Referral**: Referral system with rewards
+- **Notification**: Multi-language push notifications
+
+### Key Features:
+- 📍 **Geospatial indexing** for location-based queries
+- 💰 **Multi-currency support** (NGN, BTC, ETH, USDT)
+- 🌍 **Multi-language** (English, Yoruba, Igbo, Hausa, French)
+- 🤖 **AI pricing factors** stored in ride documents
 
 ## 🎯 Roadmap
 
