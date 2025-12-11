@@ -3,6 +3,7 @@ import { authenticate, authorizeRole } from '../middleware/auth.middleware';
 import {
   getDashboardStats,
   getUsers,
+  getAllDrivers,
   getPendingDrivers,
   approveDriver,
   rejectDriver,
@@ -20,6 +21,7 @@ router.use(authorizeRole('ADMIN'));
 
 // Dashboard
 router.get('/dashboard', getDashboardStats);
+router.get('/stats', getDashboardStats); // Alias for dashboard stats
 router.get('/revenue', getRevenue);
 
 // User management
@@ -28,6 +30,7 @@ router.post('/users/:userId/block', blockUser);
 router.post('/users/:userId/unblock', unblockUser);
 
 // Driver management
+router.get('/drivers', getAllDrivers); // Supports ?status=PENDING query
 router.get('/drivers/pending', getPendingDrivers);
 router.post('/drivers/:driverId/approve', approveDriver);
 router.post('/drivers/:driverId/reject', rejectDriver);

@@ -102,6 +102,39 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllDrivers = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+
+    const query: any = {};
+    if (status) {
+      query.verificationStatus = status;
+    }
+
+    const drivers = await Driver.find(query)
+      .populate('userId', 'firstName lastName phoneNumber email')
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit));
+
+    const total = await Driver.countDocuments(query);
+
+    res.json({
+      success: true,
+      drivers,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    console.error('Get all drivers error:', error);
+    res.status(500).json({ error: 'Failed to get drivers', details: error.message });
+  }
+};
+
 export const getPendingDrivers = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 20 } = req.query;
