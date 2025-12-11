@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authAPI } from '../services/api.service';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -10,17 +11,50 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     if (!phoneNumber || !password) return;
 
     setLoading(true);
-    // In real app, call API
-    setTimeout(async () => {
-      await AsyncStorage.setItem('authToken', 'demo-token');
+    setError('');
+
+    try {
+      const response = await authAPI.login({ phoneNumber, password });
+      const { token, user } = response.data;
+
+      // Check if user is a RIDER
+      if (user.role !== 'RIDER') {
+        setLoading(false);
+        
+        if (user.role === 'ADMIN') {
+          Alert.alert(
+            'Admin Account Detected',
+            'This is the Rider app. Admins should use the Admin Dashboard at:\n\nhttps://techride-admin.onrender.com',
+            [{ text: 'OK' }]
+          );
+        } else if (user.role === 'DRIVER') {
+          Alert.alert(
+            'Driver Account Detected',
+            'This is the Rider app. Drivers should use the TechRide Driver app.',
+            [{ text: 'OK' }]
+          );
+        }
+        return;
+      }
+
+      // Store auth data for riders only
+      await AsyncStorage.setItem('authToken', token);
+      await AsyncStorage.setItem('userId', user.id);
+      await AsyncStorage.setItem('userRole', user.role);
+      await AsyncStorage.setItem('userData', JSON.stringify(user));
+
       setLoading(false);
       navigation.navigate('Home' as never);
-    }, 1000);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -66,6 +100,13 @@ export default function LoginScreen() {
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
 
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={20} color="#EF4444" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         <TouchableOpacity
           style={[styles.loginButton, (!phoneNumber || !password) && styles.loginButtonDisabled]}
           onPress={handleLogin}
@@ -73,6 +114,15 @@ export default function LoginScreen() {
         >
           <Text style={styles.loginButtonText}>{loading ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
+
+        <View style={styles.infoBox}>
+          <Ionicons name="information-circle" size={20} color="#3B82F6" />
+          <Text style={styles.infoText}>
+            This is the TechRide Rider app. {'\n'}
+            Admins use: techride-admin.onrender.com{'\n'}
+            Drivers use: TechRide Driver app
+          </Text>
+        </View>
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -211,5 +261,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4F46E5',
     fontWeight: '600',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  errorText: {
+    marginLeft: 8,
+    color: '#EF4444',
+    fontSize: 14,
+    flex: 1,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  infoText: {
+    marginLeft: 8,
+    color: '#1E40AF',
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 18,
   },
 });
