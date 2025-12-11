@@ -124,17 +124,6 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <TouchableOpacity style={styles.socialButton}>
-          <Ionicons name="logo-google" size={20} color="#4F46E5" />
-          <Text style={styles.socialButtonText}>Continue with Google</Text>
-        </TouchableOpacity>
-
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register' as never)}>
