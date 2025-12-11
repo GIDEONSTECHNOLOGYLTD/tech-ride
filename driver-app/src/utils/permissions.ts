@@ -1,100 +1,105 @@
-import { Platform, PermissionsAndroid, Alert } from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
-import messaging from '@react-native-firebase/messaging';
+import { Platform } from 'react-native';
+import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 
 export const requestLocationPermission = async (): Promise<boolean> => {
-  if (Platform.OS === 'ios') {
-    const status = await Geolocation.requestAuthorization('always');
-    return status === 'granted';
-  }
-
-  if (Platform.OS === 'android') {
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      {
-        title: 'TechRide Driver Location Permission',
-        message: 'We need access to your location to find nearby riders',
-        buttonPositive: 'OK',
-      }
-    );
-
-    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-      // Also request background location for continuous tracking
-      if (Platform.Version >= 29) {
-        const backgroundGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-          {
-            title: 'Background Location Permission',
-            message: 'Allow TechRide to access your location in the background',
-            buttonPositive: 'OK',
-          }
-        );
-        return backgroundGranted === PermissionsAndroid.RESULTS.GRANTED;
-      }
-      return true;
+  try {
+    const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+    
+    if (foregroundStatus !== 'granted') {
+      console.log('❌ Foreground location permission denied');
+      return false;
     }
+
+    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+    
+    if (backgroundStatus !== 'granted') {
+      console.log('⚠️ Background location permission denied');
+      return foregroundStatus === 'granted';
+    }
+
+    console.log('✅ Location permissions granted');
+    return true;
+  } catch (error) {
+    console.error('Location permission error:', error);
     return false;
   }
-
-  return false;
 };
 
 export const requestNotificationPermission = async (): Promise<boolean> => {
   try {
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-    if (enabled) {
-      console.log('✅ Notification permission granted');
-      // Get FCM token
-      const token = await messaging().getToken();
-      console.log('FCM Token:', token);
-      return true;
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
     }
-    return false;
+    
+    if (finalStatus !== 'granted') {
+      console.log('❌ Notification permission denied');
+      return false;
+    }
+
+    console.log('✅ Notification permission granted');
+    
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+    
+    return true;
   } catch (error) {
     console.error('Notification permission error:', error);
     return false;
   }
 };
 
-export const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
-  return new Promise((resolve, reject) => {
-    Geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        reject(error);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
-  });
+export const getCurrentLocation = async (): Promise<{ latitude: number; longitude: number }> => {
+  try {
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+    });
+    
+    return {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    };
+  } catch (error) {
+    console.error('Get current location error:', error);
+    throw error;
+  }
 };
 
 export const watchLocation = (
   callback: (location: { latitude: number; longitude: number; heading: number }) => void
-): number => {
-  return Geolocation.watchPosition(
-    (position) => {
+): { remove: () => void } => {
+  const subscription = Location.watchPositionAsync(
+    {
+      accuracy: Location.Accuracy.High,
+      timeInterval: 5000,
+      distanceInterval: 10,
+    },
+    (location) => {
       callback({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        heading: position.coords.heading || 0,
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        heading: location.coords.heading || 0,
       });
-    },
-    (error) => {
-      console.error('Watch location error:', error);
-    },
-    { enableHighAccuracy: true, distanceFilter: 10, interval: 5000 }
+    }
   );
+
+  return {
+    remove: () => {
+      subscription.then(sub => sub.remove());
+    }
+  };
 };
 
-export const clearLocationWatch = (watchId: number) => {
-  Geolocation.clearWatch(watchId);
+export const clearLocationWatch = (watchId: { remove: () => void }) => {
+  watchId.remove();
 };

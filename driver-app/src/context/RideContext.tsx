@@ -2,7 +2,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { rideAPI } from '../services/api';
 import socketService from '../services/socket';
-import Sound from 'react-native-sound';
 
 interface Ride {
   id: string;
@@ -30,14 +29,6 @@ interface RideContextType {
 
 const RideContext = createContext<RideContextType>({} as RideContextType);
 
-// Initialize notification sound
-Sound.setCategory('Playback');
-const notificationSound = new Sound('ride_request.mp3', Sound.MAIN_BUNDLE, (error) => {
-  if (error) {
-    console.log('Failed to load sound', error);
-  }
-});
-
 export const RideProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentRide, setCurrentRide] = useState<Ride | null>(null);
   const [pendingRides, setPendingRides] = useState<Ride[]>([]);
@@ -54,9 +45,6 @@ export const RideProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const handleNewRideRequest = (data: any) => {
-    // Play notification sound
-    notificationSound.play();
-
     // Show alert
     Alert.alert(
       '🚗 New Ride Request!',
