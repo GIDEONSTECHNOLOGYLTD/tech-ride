@@ -86,9 +86,35 @@ app.use('/api/', globalLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'TechRide API',
+    version: '1.0.0',
+    status: 'running',
+    message: 'Welcome to TechRide Backend API',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth',
+      users: '/api/users',
+      drivers: '/api/drivers',
+      rides: '/api/rides',
+      payments: '/api/payments',
+      admin: '/api/admin',
+      banks: '/api/banks',
+    },
+    documentation: 'Contact support for API documentation',
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+  });
 });
 
 // API Routes
