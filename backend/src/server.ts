@@ -18,6 +18,7 @@ import driverRoutes from './routes/driver.routes';
 import rideRoutes from './routes/ride.routes';
 import paymentRoutes from './routes/payment.routes';
 import adminRoutes from './routes/admin.routes';
+import bankRoutes from './routes/bank.routes';
 
 // Import socket handler
 import { initializeSocketHandlers } from './socket/socket.handler';
@@ -85,6 +86,7 @@ app.use('/api/drivers', driverRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/banks', bankRoutes);
 
 // Initialize Socket.IO
 initializeSocketHandlers(io);
