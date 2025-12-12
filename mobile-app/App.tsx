@@ -16,6 +16,9 @@ import RideTrackingScreen from './src/screens/RideTrackingScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import RideHistoryScreen from './src/screens/RideHistoryScreen';
 import WalletScreen from './src/screens/WalletScreen';
+import WalletTopUpScreen from './src/screens/WalletTopUpScreen';
+import CryptoTopUpScreen from './src/screens/CryptoTopUpScreen';
+import PaystackWebViewScreen from './src/screens/PaystackWebViewScreen';
 import PaymentMethodScreen from './src/screens/PaymentMethodScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
@@ -58,6 +61,9 @@ export default function App() {
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="RideHistory" component={RideHistoryScreen} />
             <Stack.Screen name="Wallet" component={WalletScreen} />
+            <Stack.Screen name="WalletTopUp" component={WalletTopUpScreen} />
+            <Stack.Screen name="CryptoTopUp" component={CryptoTopUpScreen} />
+            <Stack.Screen name="PaystackWebView" component={PaystackWebViewScreen} />
             <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="PromoCodes" component={PromoCodesScreen} />
