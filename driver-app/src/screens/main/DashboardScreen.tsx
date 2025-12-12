@@ -20,7 +20,7 @@ const DashboardScreen = () => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [earnings, setEarnings] = useState<any>(null);
-  const [locationWatchId, setLocationWatchId] = useState<number | null>(null);
+  const [locationWatchId, setLocationWatchId] = useState<{ remove: () => void } | null>(null);
   const { currentRide, pendingRides } = useRide();
 
   useEffect(() => {
@@ -71,8 +71,8 @@ const DashboardScreen = () => {
   };
 
   const stopLocationTracking = () => {
-    if (locationWatchId !== null) {
-      clearLocationWatch(locationWatchId);
+    if (locationWatchId) {
+      locationWatchId.remove();
       setLocationWatchId(null);
     }
   };

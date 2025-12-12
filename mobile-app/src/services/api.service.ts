@@ -11,11 +11,45 @@ const api = axios.create({
 });
 
 // Add auth token to requests
-api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('authToken');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    if (__DEV__) {
+      console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+    }
+    
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    // Network error
+    if (!error.response) {
+      error.isNetworkError = true;
+      error.message = 'Network error. Please check your internet connection.';
+      return Promise.reject(error);
+    }
+
+    // Token expired or invalid
+    if (error.response?.status === 401) {
+      await AsyncStorage.multiRemove(['authToken', 'userId', 'userRole', 'userData']);
+      // Navigate handled by app navigation listener
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export const authAPI = {
   login: (data: { phoneNumber: string; password: string }) => api.post('/auth/login', data),
