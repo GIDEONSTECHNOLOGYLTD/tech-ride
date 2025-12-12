@@ -67,12 +67,24 @@ app.use(express.urlencoded({ extended: true }));
 // Multi-language support (optional for local dev)
 // app.use(i18nextMiddleware.handle(i18next));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - Global per IP
+const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 200, // limit each IP to 200 requests per windowMs
+  message: { error: 'Too many requests from this IP, please try again later' },
 });
-app.use('/api/', limiter);
+
+// Strict rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // 10 login attempts per 15 minutes
+  message: { error: 'Too many authentication attempts, please try again later' },
+  skipSuccessfulRequests: true,
+});
+
+app.use('/api/', globalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Health check
 app.get('/health', (req, res) => {

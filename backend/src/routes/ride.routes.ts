@@ -1,6 +1,7 @@
 import express from 'express';
 import { body } from 'express-validator';
 import { authenticate } from '../middleware/auth.middleware';
+import { normalUserRateLimit, strictUserRateLimit } from '../middleware/user-rate-limit.middleware';
 import {
   requestRide,
   acceptRide,
@@ -16,10 +17,12 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
+router.use(normalUserRateLimit); // Apply per-user rate limiting
 
-// Request a ride
+// Request a ride (stricter rate limit - expensive operation)
 router.post(
   '/request',
+  strictUserRateLimit,
   [
     body('pickupAddress').notEmpty(),
     body('pickupLatitude').isFloat(),

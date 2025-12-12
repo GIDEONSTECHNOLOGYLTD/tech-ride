@@ -5,8 +5,13 @@ import User from '../models/User';
 import { sendSMS } from '../utils/sms.util';
 import { generateOTP } from '../utils/otp.util';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRE = process.env.JWT_EXPIRE || '7d';
+// CRITICAL: JWT_SECRET must be set in production
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: JWT_SECRET environment variable must be set in production');
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-do-not-use-in-production';
+const JWT_EXPIRE = process.env.JWT_EXPIRE || '15m'; // Shorter expiry, use refresh tokens
+const JWT_REFRESH_EXPIRE = '30d';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -59,17 +64,28 @@ export const register = async (req: Request, res: Response) => {
     // Send OTP via SMS
     await sendSMS(phoneNumber, `Your TechRide verification code is: ${otp}`);
 
-    // Generate JWT token
-    const token = jwt.sign(
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRE } as any
     );
 
+    const refreshToken = jwt.sign(
+      { userId: user._id, type: 'refresh' },
+      JWT_SECRET,
+      { expiresIn: JWT_REFRESH_EXPIRE } as any
+    );
+
+    // Store refresh token in user document
+    user.refreshToken = refreshToken;
+    await user.save();
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully. Please verify your phone number.',
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -116,16 +132,27 @@ export const login = async (req: Request, res: Response) => {
     user.lastActive = new Date();
     await user.save();
 
-    // Generate JWT token
-    const token = jwt.sign(
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRE } as any
     );
 
+    const refreshToken = jwt.sign(
+      { userId: user._id, type: 'refresh' },
+      JWT_SECRET,
+      { expiresIn: JWT_REFRESH_EXPIRE } as any
+    );
+
+    // Store refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
     res.json({
       success: true,
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -248,15 +275,26 @@ export const resendOTP = async (req: Request, res: Response) => {
 
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const { refreshToken: token } = req.body;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!token) {
+      return res.status(401).json({ error: 'Refresh token required' });
     }
 
-    // Generate new token
-    const token = jwt.sign(
+    // Verify refresh token
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({ error: 'Invalid token type' });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user || user.refreshToken !== token) {
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
+
+    // Generate new access token
+    const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRE } as any
@@ -264,10 +302,10 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      token,
+      token: accessToken,
     });
   } catch (error: any) {
     console.error('Token refresh error:', error);
-    res.status(500).json({ error: 'Token refresh failed', details: error.message });
+    res.status(401).json({ error: 'Token refresh failed', details: error.message });
   }
 };

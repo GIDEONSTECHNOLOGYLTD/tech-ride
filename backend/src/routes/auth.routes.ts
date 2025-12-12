@@ -51,7 +51,7 @@ router.post(
   resendOTP
 );
 
-// Refresh token
+// Refresh token (no auth required - uses refresh token)
 router.post('/refresh-token', refreshToken);
 
 export default router;

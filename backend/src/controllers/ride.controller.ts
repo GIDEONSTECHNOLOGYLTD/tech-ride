@@ -10,6 +10,8 @@ import pricingService from '../services/pricing.service';
 import firebaseService from '../services/firebase.service';
 import paystackService from '../services/paystack.service';
 import { io } from '../server';
+import logger from '../utils/logger.util';
+import { isWithinGeofence, calculateDistance as geoCalculateDistance, isValidCoordinates, isWithinNigeria } from '../utils/geofence.util';
 
 // Calculate distance using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -37,6 +39,22 @@ export const requestRide = async (req: Request, res: Response) => {
     } = req.body;
 
     const userId = (req as any).user.userId;
+
+    // CRITICAL: Validate coordinates
+    const pickup = { latitude: pickupLatitude, longitude: pickupLongitude };
+    const dropoff = { latitude: dropoffLatitude, longitude: dropoffLongitude };
+
+    if (!isValidCoordinates(pickup) || !isValidCoordinates(dropoff)) {
+      return res.status(400).json({ error: 'Invalid coordinates' });
+    }
+
+    // Validate service area (Nigeria only)
+    if (!isWithinNigeria(pickup) || !isWithinNigeria(dropoff)) {
+      return res.status(400).json({
+        error: 'Service not available in this location',
+        message: 'TechRide currently operates only within Nigeria',
+      });
+    }
 
     // Calculate distance and duration
     const distance = calculateDistance(pickupLatitude, pickupLongitude, dropoffLatitude, dropoffLongitude);
@@ -256,6 +274,7 @@ export const acceptRide = async (req: Request, res: Response) => {
 export const startRide = async (req: Request, res: Response) => {
   try {
     const { rideId } = req.params;
+    const { driverLatitude, driverLongitude } = req.body;
 
     const ride = await Ride.findById(rideId);
     if (!ride) {
@@ -264,6 +283,26 @@ export const startRide = async (req: Request, res: Response) => {
 
     if (ride.status !== 'ARRIVED') {
       return res.status(400).json({ error: 'Driver must arrive at pickup first' });
+    }
+
+    // CRITICAL: Validate driver is at pickup location
+    if (driverLatitude && driverLongitude) {
+      const driverLocation = { latitude: driverLatitude, longitude: driverLongitude };
+      const pickupLocation = {
+        latitude: ride.pickup.coordinates[1],
+        longitude: ride.pickup.coordinates[0],
+      };
+
+      const dist = geoCalculateDistance(driverLocation, pickupLocation);
+      
+      // Allow starting within 150m of pickup (account for GPS accuracy)
+      if (!isWithinGeofence(driverLocation, pickupLocation, 150)) {
+        return res.status(400).json({
+          error: 'Cannot start ride - not at pickup location',
+          distance: Math.round(dist),
+          required: 'Must be within 150m of pickup',
+        });
+      }
     }
 
     ride.status = 'IN_PROGRESS';
@@ -294,7 +333,7 @@ export const startRide = async (req: Request, res: Response) => {
 export const completeRide = async (req: Request, res: Response) => {
   try {
     const { rideId } = req.params;
-    const { actualDistance, actualDuration } = req.body;
+    const { actualDistance, actualDuration, driverLatitude, driverLongitude } = req.body;
 
     const ride = await Ride.findById(rideId);
     if (!ride) {
@@ -303,6 +342,26 @@ export const completeRide = async (req: Request, res: Response) => {
 
     if (ride.status !== 'IN_PROGRESS') {
       return res.status(400).json({ error: 'Ride is not in progress' });
+    }
+
+    // CRITICAL: Validate driver is at dropoff location
+    if (driverLatitude && driverLongitude) {
+      const driverLocation = { latitude: driverLatitude, longitude: driverLongitude };
+      const dropoffLocation = {
+        latitude: ride.dropoff.coordinates[1],
+        longitude: ride.dropoff.coordinates[0],
+      };
+
+      const dist = geoCalculateDistance(driverLocation, dropoffLocation);
+      
+      // Allow completing within 150m of dropoff
+      if (!isWithinGeofence(driverLocation, dropoffLocation, 150)) {
+        return res.status(400).json({
+          error: 'Cannot complete ride - not at dropoff location',
+          distance: Math.round(dist),
+          required: 'Must be within 150m of dropoff',
+        });
+      }
     }
 
     // Recalculate fare based on actual distance/duration
