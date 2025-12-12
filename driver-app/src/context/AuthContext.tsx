@@ -51,6 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (token && userData) {
         const parsedUser = JSON.parse(userData);
+        
+        // Validate role on app load
+        if (parsedUser.role !== 'DRIVER') {
+          console.warn('Non-driver user detected, clearing session');
+          await AsyncStorage.multiRemove(['authToken', 'user', 'fcmToken']);
+          setIsLoading(false);
+          return;
+        }
+        
         setUser(parsedUser);
         
         // Connect socket
@@ -74,6 +83,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authAPI.login(phoneNumber, password);
       const { token, user: userData } = response.data;
       
+      // Validate user role - only DRIVER can use this app
+      if (userData.role !== 'DRIVER') {
+        throw new Error('This app is for drivers only. Please use the TechRide Rider app if you are a passenger.');
+      }
+      
       await AsyncStorage.setItem('authToken', token);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       
@@ -82,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Connect socket
       socketService.connect();
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Login failed');
+      throw new Error(error.response?.data?.error || error.message || 'Login failed');
     }
   };
 
