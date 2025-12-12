@@ -6,9 +6,11 @@
 set -e
 
 echo "🔧 Running Xcode Cloud post-clone script..."
+echo "📍 Current directory: $(pwd)"
 
-# Navigate to iOS directory
-cd driver-app/ios
+# On Xcode Cloud, we're already in the ios folder
+# The script is at: /Volumes/workspace/repository/driver-app/ios/ci_scripts/ci_post_clone.sh
+# So we're already at the right location
 
 # Install CocoaPods dependencies
 echo "📦 Installing CocoaPods dependencies..."
