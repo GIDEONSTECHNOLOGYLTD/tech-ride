@@ -4,6 +4,8 @@ import Ride from '../models/Ride';
 import Payment from '../models/Payment';
 import Notification from '../models/Notification';
 import paystackService from '../services/paystack.service';
+import cryptoService from '../services/crypto.service';
+import logger from '../utils/logger.util';
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
@@ -179,6 +181,147 @@ export const addCryptoWallet = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Add crypto wallet error:', error);
     res.status(500).json({ error: 'Failed to add crypto wallet', details: error.message });
+  }
+};
+
+export const topUpWallet = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { amount, method } = req.body;  // method: 'PAYSTACK' or 'CRYPTO'
+
+    if (!amount || amount < 100) {
+      return res.status(400).json({ error: 'Minimum top-up amount is ₦100' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (method === 'PAYSTACK') {
+      const reference = `wallet_topup_${userId}_${Date.now()}`;
+      
+      const result = await paystackService.initializeTransaction(
+        user.email || user.phoneNumber,
+        amount,
+        reference,
+        {
+          userId: user._id,
+          type: 'wallet_topup',
+          amount,
+        }
+      );
+
+      if (result.success) {
+        // Create payment record for tracking
+        const payment = new Payment({
+          userId,
+          amount,
+          currency: 'NGN',
+          method: 'PAYSTACK',
+          status: 'PENDING',
+          paystackReference: reference,
+          baseFare: 0,
+          surgeCharge: 0,
+          discount: 0,
+          platformCommission: 0,
+          driverEarnings: 0,
+        });
+        await payment.save();
+
+        res.json({
+          success: true,
+          message: 'Payment initialized',
+          paymentUrl: result.data.authorization_url,
+          reference,
+          amount,
+        });
+      } else {
+        res.status(400).json({ error: result.error });
+      }
+    } else if (method === 'CRYPTO') {
+      // Get crypto prices
+      const prices = await cryptoService.getCryptoPrices();
+      
+      if (!prices.success) {
+        return res.status(500).json({ error: 'Failed to get crypto prices' });
+      }
+
+      res.json({
+        success: true,
+        message: 'Send crypto to wallet address',
+        wallets: {
+          BTC: process.env.CRYPTO_WALLET_BTC,
+          ETH: process.env.CRYPTO_WALLET_ETH,
+          USDT: process.env.CRYPTO_WALLET_USDT,
+        },
+        amounts: {
+          BTC: cryptoService.convertNgnToCrypto(amount, prices.prices.BTC),
+          ETH: cryptoService.convertNgnToCrypto(amount, prices.prices.ETH),
+          USDT: cryptoService.convertNgnToCrypto(amount, prices.prices.USDT),
+        },
+        ngnAmount: amount,
+      });
+    } else {
+      res.status(400).json({ error: 'Invalid top-up method' });
+    }
+  } catch (error: any) {
+    logger.error('Wallet top-up failed', error);
+    res.status(500).json({ error: 'Failed to initialize wallet top-up', details: error.message });
+  }
+};
+
+export const verifyWalletTopUp = async (req: Request, res: Response) => {
+  try {
+    const { reference } = req.params;
+    const userId = (req as any).user.userId;
+
+    const payment = await Payment.findOne({ paystackReference: reference });
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    if (payment.status === 'COMPLETED') {
+      return res.json({
+        success: true,
+        message: 'Payment already processed',
+        payment: {
+          amount: payment.amount,
+          status: payment.status,
+        },
+      });
+    }
+
+    // Verify with Paystack
+    const result = await paystackService.verifyTransaction(reference);
+
+    if (result.success) {
+      // Add money to wallet
+      const user = await User.findById(userId);
+      if (user) {
+        user.walletBalance += payment.amount;
+        await user.save();
+
+        payment.status = 'COMPLETED';
+        await payment.save();
+
+        res.json({
+          success: true,
+          message: 'Wallet topped up successfully',
+          newBalance: user.walletBalance,
+          amountAdded: payment.amount,
+        });
+      }
+    } else {
+      payment.status = 'FAILED';
+      payment.failureReason = result.error;
+      await payment.save();
+
+      res.status(400).json({ error: 'Payment verification failed', details: result.error });
+    }
+  } catch (error: any) {
+    logger.error('Verify wallet top-up failed', error);
+    res.status(500).json({ error: 'Failed to verify wallet top-up', details: error.message });
   }
 };
 

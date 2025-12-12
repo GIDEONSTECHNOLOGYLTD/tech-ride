@@ -5,6 +5,7 @@ import Ride from '../models/Ride';
 import Payment from '../models/Payment';
 import paystackService from '../services/paystack.service';
 import logger from '../utils/logger.util';
+import { getBankCode } from '../utils/banks.util';
 
 export const registerDriver = async (req: Request, res: Response) => {
   try {
@@ -45,10 +46,26 @@ export const registerDriver = async (req: Request, res: Response) => {
       documents: {
         licenseNumber,
         licenseExpiry: new Date(licenseExpiry),
-        licensePhoto,
-        vehicleRegistration,
-        insurance,
-        profilePhoto,
+        licensePhoto: licensePhoto ? {
+          url: licensePhoto,
+          uploadedAt: new Date(),
+          verified: false,
+        } : undefined,
+        vehicleRegistration: vehicleRegistration ? {
+          url: vehicleRegistration,
+          uploadedAt: new Date(),
+          verified: false,
+        } : undefined,
+        insurance: insurance ? {
+          url: insurance,
+          uploadedAt: new Date(),
+          verified: false,
+        } : undefined,
+        profilePhoto: profilePhoto ? {
+          url: profilePhoto,
+          uploadedAt: new Date(),
+          verified: false,
+        } : undefined,
       },
       verificationStatus: 'PENDING',
       isApproved: false,
@@ -253,15 +270,50 @@ export const updateBankDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Driver profile not found' });
     }
 
-    // Verify account with Paystack (optional but recommended)
-    // const bankCode = getBankCode(bankName); // You'd need a mapping function
-    // const verification = await paystackService.resolveAccountNumber(accountNumber, bankCode);
+    // Validate account number format
+    if (!/^\d{10}$/.test(accountNumber)) {
+      return res.status(400).json({ error: 'Account number must be 10 digits' });
+    }
 
-    driver.bankDetails = {
-      bankName,
-      accountNumber,
-      accountName,
-    };
+    // Get bank code
+    const bankCode = getBankCode(bankName);
+    if (!bankCode) {
+      return res.status(400).json({ 
+        error: 'Invalid bank name',
+        message: 'Please select a valid Nigerian bank',
+      });
+    }
+
+    // Verify account with Paystack
+    try {
+      const verification = await paystackService.resolveAccountNumber(accountNumber, bankCode);
+      
+      if (!verification.success) {
+        return res.status(400).json({ 
+          error: 'Account verification failed',
+          details: verification.error,
+        });
+      }
+
+      // Use verified account name from Paystack
+      const verifiedAccountName = verification.accountName || accountName;
+
+      driver.bankDetails = {
+        bankName,
+        bankCode,
+        accountNumber,
+        accountName: verifiedAccountName,
+      };
+    } catch (verifyError: any) {
+      // If verification fails, save anyway but warn user
+      logger.warn('Bank account verification failed', verifyError);
+      driver.bankDetails = {
+        bankName,
+        bankCode,
+        accountNumber,
+        accountName,
+      };
+    }
 
     await driver.save();
 
@@ -271,7 +323,7 @@ export const updateBankDetails = async (req: Request, res: Response) => {
       bankDetails: driver.bankDetails,
     });
   } catch (error: any) {
-    console.error('Update bank details error:', error);
+    logger.error('Update bank details error', error);
     res.status(500).json({ error: 'Failed to update bank details', details: error.message });
   }
 };
@@ -291,57 +343,107 @@ export const requestPayout = async (req: Request, res: Response) => {
     }
 
     if (amount > driver.availableBalance) {
-      return res.status(400).json({ error: 'Insufficient balance' });
+      return res.status(400).json({ 
+        error: 'Insufficient balance',
+        availableBalance: driver.availableBalance,
+        requestedAmount: amount,
+      });
     }
 
     if (amount < 1000) {
       return res.status(400).json({ error: 'Minimum payout is ₦1,000' });
     }
 
-    // Create transfer recipient (if not exists)
-    // const recipientResult = await paystackService.createTransferRecipient(
-    //   driver.bankDetails.accountNumber,
-    //   bankCode,
-    //   driver.bankDetails.accountName
-    // );
-
-    // Initiate transfer
     const reference = `payout_${driver._id}_${Date.now()}`;
-    // const transferResult = await paystackService.initiateTransfer(
-    //   recipientCode,
-    //   amount,
-    //   reference,
-    //   'Driver earnings payout'
-    // );
 
-    // Update driver balance
-    driver.availableBalance -= amount;
-    await driver.save();
+    // Get bank code from bank name
+    const bankCode = getBankCode(driver.bankDetails.bankName);
+    
+    if (!bankCode) {
+      return res.status(400).json({ 
+        error: 'Invalid bank name',
+        message: 'Bank not supported. Please update bank details with a valid Nigerian bank.',
+      });
+    }
+    
+    // FIXED: Uncommented Paystack integration
+    try {
+      // Create transfer recipient if not already exists
+      let recipientCode = driver.paystackRecipientCode;
+      
+      if (!recipientCode) {
+        const recipientResult = await paystackService.createTransferRecipient(
+          driver.bankDetails.accountNumber,
+          bankCode,
+          driver.bankDetails.accountName
+        );
 
-    // Create payment record
-    const payment = new Payment({
-      userId,
-      driverId: driver._id,
-      amount,
-      currency: 'NGN',
-      method: 'PAYSTACK',
-      status: 'PROCESSING',
-      paystackReference: reference,
-    });
-    await payment.save();
+        if (!recipientResult.success) {
+          return res.status(400).json({ 
+            error: 'Failed to create recipient',
+            details: recipientResult.error,
+          });
+        }
 
-    res.json({
-      success: true,
-      message: 'Payout request submitted',
-      payment: {
-        id: payment._id,
+        recipientCode = recipientResult.recipientCode;
+        // Store recipient code for future payouts
+        driver.paystackRecipientCode = recipientCode;
+        await driver.save();
+      }
+
+      // Initiate transfer to driver's bank account
+      const transferResult = await paystackService.initiateTransfer(
+        recipientCode,
         amount,
-        status: payment.status,
         reference,
-      },
-    });
+        'Driver earnings payout'
+      );
+
+      if (!transferResult.success) {
+        return res.status(400).json({ 
+          error: 'Transfer failed',
+          details: transferResult.error,
+        });
+      }
+
+      // Deduct from available balance only after successful transfer initiation
+      driver.availableBalance -= amount;
+      driver.pendingEarnings -= amount;  // Also reduce pending
+      await driver.save();
+
+      // Create payment record
+      const payment = new Payment({
+        userId,
+        driverId: driver._id,
+        amount,
+        currency: 'NGN',
+        method: 'PAYSTACK',
+        status: 'PROCESSING',
+        paystackReference: reference,
+      });
+      await payment.save();
+
+      res.json({
+        success: true,
+        message: 'Payout initiated successfully',
+        payment: {
+          id: payment._id,
+          amount,
+          status: payment.status,
+          reference,
+          estimatedArrival: '10-30 minutes',
+        },
+        newBalance: driver.availableBalance,
+      });
+    } catch (paystackError: any) {
+      logger.error('Paystack transfer error', paystackError);
+      return res.status(500).json({ 
+        error: 'Payout processing failed',
+        details: paystackError.message,
+      });
+    }
   } catch (error: any) {
-    console.error('Request payout error:', error);
+    logger.error('Request payout error', error);
     res.status(500).json({ error: 'Failed to request payout', details: error.message });
   }
 };
@@ -377,5 +479,63 @@ export const getRideHistory = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get ride history error:', error);
     res.status(500).json({ error: 'Failed to get ride history', details: error.message });
+  }
+};
+
+export const updateDocuments = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+
+    const driver = await Driver.findOne({ userId });
+    if (!driver) {
+      return res.status(404).json({ error: 'Driver profile not found' });
+    }
+
+    // Get uploaded files
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    // Update documents that were uploaded
+    if (files?.licensePhoto?.[0]) {
+      driver.documents.licensePhoto = {
+        url: files.licensePhoto[0].path,
+        uploadedAt: new Date(),
+        verified: false,
+      };
+    }
+
+    if (files?.vehicleRegistration?.[0]) {
+      driver.documents.vehicleRegistration = {
+        url: files.vehicleRegistration[0].path,
+        uploadedAt: new Date(),
+        verified: false,
+      };
+    }
+
+    if (files?.insurance?.[0]) {
+      driver.documents.insurance = {
+        url: files.insurance[0].path,
+        uploadedAt: new Date(),
+        verified: false,
+      };
+    }
+
+    if (files?.profilePhoto?.[0]) {
+      driver.documents.profilePhoto = {
+        url: files.profilePhoto[0].path,
+        uploadedAt: new Date(),
+        verified: false,
+      };
+    }
+
+    await driver.save();
+
+    res.json({
+      success: true,
+      message: 'Documents updated successfully',
+      documents: driver.documents,
+    });
+  } catch (error: any) {
+    logger.error('Update documents failed', error);
+    res.status(500).json({ error: 'Failed to update documents', details: error.message });
   }
 };
