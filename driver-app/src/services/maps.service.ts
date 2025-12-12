@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const GOOGLE_MAPS_API_KEY = 'YOUR_API_KEY'; // Replace with actual key or env variable
+// Get API key from environment variable or use placeholder
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
 
 interface Coordinates {
   latitude: number;
