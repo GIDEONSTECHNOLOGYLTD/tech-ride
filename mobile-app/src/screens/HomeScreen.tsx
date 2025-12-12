@@ -34,19 +34,19 @@ export default function HomeScreen() {
 
   const checkUserRole = async () => {
     try {
-      const userDataStr = await AsyncStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        // Only set admin if role is EXACTLY 'ADMIN'
-        if (userData.role && userData.role.toUpperCase() === 'ADMIN') {
-          setUserRole('ADMIN');
-        } else {
-          setUserRole('');
-        }
+      // Fetch fresh user data from API to ensure role is current
+      const response = await userAPI.getProfile();
+      const userData = response.data.user;
+      
+      // Only set admin if role is EXACTLY 'ADMIN'
+      if (userData && userData.role === 'ADMIN') {
+        setUserRole('ADMIN');
+      } else {
+        setUserRole('RIDER');
       }
     } catch (error) {
       console.log('Failed to get user role:', error);
-      setUserRole('');
+      setUserRole('RIDER'); // Default to RIDER on error
     }
   };
 
@@ -121,7 +121,7 @@ export default function HomeScreen() {
         <View style={styles.topMenuRight}>
           {userRole === 'ADMIN' && (
             <TouchableOpacity 
-              style={styles.adminButton}
+              style={[styles.menuButton, styles.adminButton]}
               onPress={() => navigation.navigate('AdminDashboard' as never)}
             >
               <Ionicons name="settings" size={24} color="#FFF" />
@@ -205,6 +205,9 @@ const styles = StyleSheet.create({
   },
   adminButton: {
     backgroundColor: '#4F46E5',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   bottomPanel: {
     position: 'absolute',

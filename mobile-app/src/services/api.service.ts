@@ -80,7 +80,7 @@ export const userAPI = {
   topupWallet: (amount: number, paymentMethod: string) => 
     api.post('/users/wallet/topup', { amount, paymentMethod }),
   getNearbyDrivers: (latitude: number, longitude: number, radius: number = 5) =>
-    api.get('/drivers/nearby', { params: { latitude, longitude, radius } }),
+    api.get('/users/nearby-drivers', { params: { latitude, longitude, radius } }),
   addCryptoWallet: (currency: string, address: string) => 
     api.post('/users/wallet/crypto', { currency, address }),
   getNotifications: () => api.get('/users/notifications'),
