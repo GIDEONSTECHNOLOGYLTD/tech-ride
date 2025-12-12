@@ -11,6 +11,7 @@ import {
   updateBankDetails,
   requestPayout,
   getRideHistory,
+  updateDocuments,
 } from '../controllers/driver.controller';
 
 const router = express.Router();
@@ -35,5 +36,11 @@ router.get('/stats', getDriverStats);
 router.put('/bank-details', updateBankDetails);
 router.post('/payout', requestPayout);
 router.get('/rides', getRideHistory);
+router.put('/documents', uploadFields([
+  { name: 'licensePhoto', maxCount: 1 },
+  { name: 'vehicleRegistration', maxCount: 1 },
+  { name: 'insurance', maxCount: 1 },
+  { name: 'profilePhoto', maxCount: 1 },
+]), updateDocuments);
 
 export default router;

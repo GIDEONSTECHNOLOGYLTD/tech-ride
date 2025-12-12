@@ -42,6 +42,14 @@ const DocumentsScreen = ({ navigation }: any) => {
     return verified ? 'Verified' : 'Pending Verification';
   };
 
+  const isDocumentUploaded = (doc: any) => {
+    return doc?.url ? true : false;
+  };
+
+  const isDocumentVerified = (doc: any) => {
+    return doc?.verified === true;
+  };
+
   const handleUploadDocument = async (type: string) => {
     try {
       let result;
@@ -139,9 +147,7 @@ const DocumentsScreen = ({ navigation }: any) => {
       // Upload to backend
       Alert.alert('Uploading', 'Please wait while we upload your document...');
       
-      // Note: This requires a multipart/form-data upload endpoint
-      // The actual implementation will depend on your backend API
-      await driverAPI.updateProfile(formData);
+      await driverAPI.updateDocuments(formData);
       
       Alert.alert('Success', `${type} uploaded successfully`);
       loadDocuments(); // Reload documents
@@ -184,18 +190,23 @@ const DocumentsScreen = ({ navigation }: any) => {
               <Icon name="card-account-details" size={24} color="#1E88E5" />
               <Text style={styles.documentTitle}>Driver's License</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(documents?.documentsVerified) + '20' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(documents?.documentsVerified) }]}>
-                {getStatusText(documents?.documentsVerified)}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(isDocumentVerified(documents?.documents?.licensePhoto)) + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(isDocumentVerified(documents?.documents?.licensePhoto)) }]}>
+                {isDocumentUploaded(documents?.documents?.licensePhoto) ? getStatusText(isDocumentVerified(documents?.documents?.licensePhoto)) : 'Not Uploaded'}
               </Text>
             </View>
           </View>
-          {documents?.licenseNumber && (
-            <Text style={styles.documentDetail}>License No: {documents.licenseNumber}</Text>
+          {documents?.documents?.licenseNumber && (
+            <Text style={styles.documentDetail}>License No: {documents.documents.licenseNumber}</Text>
           )}
-          {documents?.licenseExpiry && (
+          {documents?.documents?.licenseExpiry && (
             <Text style={styles.documentDetail}>
-              Expires: {format(new Date(documents.licenseExpiry), 'MMM dd, yyyy')}
+              Expires: {format(new Date(documents.documents.licenseExpiry), 'MMM dd, yyyy')}
+            </Text>
+          )}
+          {documents?.documents?.licensePhoto?.uploadedAt && (
+            <Text style={styles.documentDetail}>
+              Uploaded: {format(new Date(documents.documents.licensePhoto.uploadedAt), 'MMM dd, yyyy')}
             </Text>
           )}
           <TouchableOpacity
@@ -214,14 +225,19 @@ const DocumentsScreen = ({ navigation }: any) => {
               <Icon name="file-document" size={24} color="#1E88E5" />
               <Text style={styles.documentTitle}>Vehicle Registration</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(documents?.documentsVerified) + '20' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(documents?.documentsVerified) }]}>
-                {getStatusText(documents?.documentsVerified)}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(isDocumentVerified(documents?.documents?.vehicleRegistration)) + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(isDocumentVerified(documents?.documents?.vehicleRegistration)) }]}>
+                {isDocumentUploaded(documents?.documents?.vehicleRegistration) ? getStatusText(isDocumentVerified(documents?.documents?.vehicleRegistration)) : 'Not Uploaded'}
               </Text>
             </View>
           </View>
           {documents?.licensePlate && (
             <Text style={styles.documentDetail}>Plate: {documents.licensePlate}</Text>
+          )}
+          {documents?.documents?.vehicleRegistration?.uploadedAt && (
+            <Text style={styles.documentDetail}>
+              Uploaded: {format(new Date(documents.documents.vehicleRegistration.uploadedAt), 'MMM dd, yyyy')}
+            </Text>
           )}
           <TouchableOpacity
             style={styles.uploadButton}
@@ -239,12 +255,17 @@ const DocumentsScreen = ({ navigation }: any) => {
               <Icon name="shield-car" size={24} color="#1E88E5" />
               <Text style={styles.documentTitle}>Vehicle Insurance</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(documents?.documentsVerified) + '20' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(documents?.documentsVerified) }]}>
-                {getStatusText(documents?.documentsVerified)}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(isDocumentVerified(documents?.documents?.insurance)) + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(isDocumentVerified(documents?.documents?.insurance)) }]}>
+                {isDocumentUploaded(documents?.documents?.insurance) ? getStatusText(isDocumentVerified(documents?.documents?.insurance)) : 'Not Uploaded'}
               </Text>
             </View>
           </View>
+          {documents?.documents?.insurance?.uploadedAt && (
+            <Text style={styles.documentDetail}>
+              Uploaded: {format(new Date(documents.documents.insurance.uploadedAt), 'MMM dd, yyyy')}
+            </Text>
+          )}
           <TouchableOpacity
             style={styles.uploadButton}
             onPress={() => handleUploadDocument('Insurance')}
@@ -261,12 +282,17 @@ const DocumentsScreen = ({ navigation }: any) => {
               <Icon name="camera" size={24} color="#1E88E5" />
               <Text style={styles.documentTitle}>Profile Photo</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(true) + '20' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(true) }]}>
-                {getStatusText(true)}
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(isDocumentVerified(documents?.documents?.profilePhoto)) + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(isDocumentVerified(documents?.documents?.profilePhoto)) }]}>
+                {isDocumentUploaded(documents?.documents?.profilePhoto) ? getStatusText(isDocumentVerified(documents?.documents?.profilePhoto)) : 'Not Uploaded'}
               </Text>
             </View>
           </View>
+          {documents?.documents?.profilePhoto?.uploadedAt && (
+            <Text style={styles.documentDetail}>
+              Uploaded: {format(new Date(documents.documents.profilePhoto.uploadedAt), 'MMM dd, yyyy')}
+            </Text>
+          )}
           <TouchableOpacity
             style={styles.uploadButton}
             onPress={() => handleUploadDocument('Profile Photo')}

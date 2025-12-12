@@ -50,7 +50,9 @@ api.interceptors.response.use(
       await AsyncStorage.removeItem('user');
       
       // Emit event for navigation (AuthContext will handle)
-      global.authExpired = true;
+      if ((global as any).authExpired) {
+        (global as any).authExpired = true;
+      }
     }
     
     return Promise.reject(error);
@@ -82,6 +84,13 @@ export const driverAPI = {
   updateBankDetails: (data: any) => api.put('/drivers/bank-details', data),
   requestPayout: (amount: number) => api.post('/drivers/payout', { amount }),
   getRideHistory: (page: number = 1) => api.get(`/drivers/rides?page=${page}`),
+  updateDocuments: (formData: any) => {
+    return api.put('/drivers/documents', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 // Ride API
