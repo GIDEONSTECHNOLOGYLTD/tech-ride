@@ -15,10 +15,26 @@ export interface IDriver extends Document {
   documents: {
     licenseNumber: string;
     licenseExpiry: Date;
-    licensePhoto?: string;
-    vehicleRegistration?: string;
-    insurance?: string;
-    profilePhoto?: string;
+    licensePhoto?: {
+      url: string;
+      uploadedAt: Date;
+      verified: boolean;
+    };
+    vehicleRegistration?: {
+      url: string;
+      uploadedAt: Date;
+      verified: boolean;
+    };
+    insurance?: {
+      url: string;
+      uploadedAt: Date;
+      verified: boolean;
+    };
+    profilePhoto?: {
+      url: string;
+      uploadedAt: Date;
+      verified: boolean;
+    };
   };
   
   // Status
@@ -49,10 +65,14 @@ export interface IDriver extends Document {
   
   // Bank Details for Payouts
   bankDetails?: {
-    bankName: string;
-    accountNumber: string;
-    accountName: string;
+    bankName: string;        // Full bank name (e.g., "Guaranty Trust Bank")
+    bankCode?: string;       // Paystack bank code (optional, can be derived)
+    accountNumber: string;   // 10-digit account number
+    accountName: string;     // Account holder name (must match bank records)
   };
+  
+  // Paystack recipient code for transfers (stored after first payout)
+  paystackRecipientCode?: string;
   
   // Current Ride
   currentRideId?: mongoose.Types.ObjectId;
@@ -80,10 +100,26 @@ const DriverSchema = new Schema<IDriver>({
   documents: {
     licenseNumber: { type: String, required: true, trim: true },
     licenseExpiry: { type: Date, required: true },
-    licensePhoto: String,
-    vehicleRegistration: String,
-    insurance: String,
-    profilePhoto: String,
+    licensePhoto: {
+      url: String,
+      uploadedAt: Date,
+      verified: { type: Boolean, default: false },
+    },
+    vehicleRegistration: {
+      url: String,
+      uploadedAt: Date,
+      verified: { type: Boolean, default: false },
+    },
+    insurance: {
+      url: String,
+      uploadedAt: Date,
+      verified: { type: Boolean, default: false },
+    },
+    profilePhoto: {
+      url: String,
+      uploadedAt: Date,
+      verified: { type: Boolean, default: false },
+    },
   },
   
   isOnline: { type: Boolean, default: false },
@@ -114,9 +150,12 @@ const DriverSchema = new Schema<IDriver>({
   
   bankDetails: {
     bankName: String,
+    bankCode: String,
     accountNumber: String,
     accountName: String,
   },
+  
+  paystackRecipientCode: { type: String },
   
   currentRideId: { type: Schema.Types.ObjectId, ref: 'Ride' },
   

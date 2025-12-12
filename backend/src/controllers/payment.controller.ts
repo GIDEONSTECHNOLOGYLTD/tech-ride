@@ -64,11 +64,16 @@ export const initializePayment = async (req: Request, res: Response) => {
         res.status(400).json({ error: result.error });
       }
     } else if (method === 'WALLET') {
-      // Process wallet payment
+      // Process wallet payment IMMEDIATELY (not at ride completion)
       if (user.walletBalance < amount) {
-        return res.status(400).json({ error: 'Insufficient wallet balance' });
+        return res.status(400).json({ 
+          error: 'Insufficient wallet balance',
+          required: amount,
+          available: user.walletBalance,
+        });
       }
 
+      // Deduct wallet balance NOW to prevent multiple rides with insufficient funds
       user.walletBalance -= amount;
       await user.save();
 
@@ -79,7 +84,7 @@ export const initializePayment = async (req: Request, res: Response) => {
         amount,
         currency: user.walletCurrency,
         method: 'WALLET',
-        status: 'COMPLETED',
+        status: 'COMPLETED',  // Mark as completed immediately since funds are deducted
         baseFare: ride.baseFare,
         surgeCharge: (amount - ride.baseFare),
         discount: ride.discount,
@@ -94,11 +99,12 @@ export const initializePayment = async (req: Request, res: Response) => {
 
       res.json({
         success: true,
-        message: 'Payment successful',
+        message: 'Payment successful - Wallet charged',
         payment: {
           id: payment._id,
           status: payment.status,
           newBalance: user.walletBalance,
+          amountCharged: amount,
         },
       });
     } else if (method === 'CRYPTO') {

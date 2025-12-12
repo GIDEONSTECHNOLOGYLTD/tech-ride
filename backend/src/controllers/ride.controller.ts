@@ -352,7 +352,14 @@ export const completeRide = async (req: Request, res: Response) => {
       driver.totalRides += 1;
       driver.completedRides += 1;
       driver.totalEarnings += ride.driverEarnings;
+      
+      // FIXED: Add earnings directly to availableBalance for instant withdrawal
+      // For production, you can add a settlement delay if needed
+      driver.availableBalance += ride.driverEarnings;
+      
+      // Keep track in pendingEarnings for accounting (will be cleared on withdrawal)
       driver.pendingEarnings += ride.driverEarnings;
+      
       await driver.save();
     }
 
@@ -361,17 +368,27 @@ export const completeRide = async (req: Request, res: Response) => {
     if (rider) {
       rider.totalRides += 1;
       
-      // Deduct from wallet if wallet payment
-      if (ride.paymentMethod === 'WALLET') {
-        if (rider.walletBalance >= ride.finalFare) {
-          rider.walletBalance -= ride.finalFare;
-          payment.status = 'COMPLETED';
-          await payment.save();
-        } else {
-          payment.status = 'FAILED';
-          payment.failureReason = 'Insufficient wallet balance';
-          await payment.save();
+      // Wallet already charged at payment initialization - no need to charge again
+      // Only handle fare adjustments if actual fare differs from estimated
+      if (ride.paymentMethod === 'WALLET' && ride.finalFare !== ride.estimatedFare) {
+        const fareAdjustment = ride.finalFare - ride.estimatedFare;
+        
+        if (fareAdjustment > 0) {
+          // Fare increased - charge difference
+          if (rider.walletBalance >= fareAdjustment) {
+            rider.walletBalance -= fareAdjustment;
+            payment.amount = ride.finalFare;
+          } else {
+            // Cannot charge difference - mark as partial payment
+            payment.status = 'COMPLETED';  // Original charge still valid
+            payment.failureReason = `Fare adjustment of ₦${fareAdjustment} could not be charged`;
+          }
+        } else if (fareAdjustment < 0) {
+          // Fare decreased - refund difference
+          rider.walletBalance += Math.abs(fareAdjustment);
+          payment.amount = ride.finalFare;
         }
+        await payment.save();
       }
       
       await rider.save();
