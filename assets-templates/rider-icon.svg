@@ -1,0 +1,45 @@
+<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blue gradient background -->
+  <defs>
+    <linearGradient id="riderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563EB;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background with rounded corners -->
+  <rect width="1024" height="1024" rx="180" fill="url(#riderGrad)"/>
+  
+  <!-- Car icon (centered, simplified for scalability) -->
+  <g transform="translate(312, 400)">
+    <!-- Car body -->
+    <path d="M 50 60 Q 70 10, 200 10 Q 230 10, 250 60 L 330 60 Q 350 60, 350 80 L 350 160 Q 350 180, 330 180 L 50 180 Q 30 180, 30 160 L 30 80 Q 30 60, 50 60 Z" 
+          fill="white" stroke="none"/>
+    
+    <!-- Car windows -->
+    <rect x="80" y="30" width="70" height="45" rx="5" fill="#3B82F6" opacity="0.4"/>
+    <rect x="170" y="30" width="70" height="45" rx="5" fill="#3B82F6" opacity="0.4"/>
+    
+    <!-- Car wheels -->
+    <circle cx="95" cy="180" r="32" fill="#2563EB"/>
+    <circle cx="95" cy="180" r="18" fill="white"/>
+    <circle cx="285" cy="180" r="32" fill="#2563EB"/>
+    <circle cx="285" cy="180" r="18" fill="white"/>
+    
+    <!-- Car lights -->
+    <circle cx="340" cy="120" r="8" fill="#FCD34D"/>
+  </g>
+  
+  <!-- Location pin (top right, modern style) -->
+  <g transform="translate(680, 200)">
+    <path d="M 60 40 C 60 18, 78 0, 100 0 C 122 0, 140 18, 140 40 C 140 70, 100 120, 100 120 C 100 120, 60 70, 60 40 Z" 
+          fill="white" opacity="0.95"/>
+    <circle cx="100" cy="40" r="18" fill="#2563EB"/>
+  </g>
+  
+  <!-- Brand text "TR" in bottom right -->
+  <g transform="translate(820, 880)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="120" 
+          font-weight="bold" fill="white" opacity="0.2">TR</text>
+  </g>
+</svg>

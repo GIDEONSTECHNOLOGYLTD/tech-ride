@@ -1,0 +1,45 @@
+<svg width="1242" height="2436" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="splashGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1242" height="2436" fill="url(#splashGrad)"/>
+  
+  <!-- Logo section (centered) -->
+  <g transform="translate(621, 1050)">
+    <!-- Simplified car icon for splash -->
+    <g transform="translate(-100, -150)">
+      <path d="M 20 30 Q 30 5, 100 5 Q 110 5, 120 30 L 160 30 Q 170 30, 170 40 L 170 80 Q 170 90, 160 90 L 20 90 Q 10 90, 10 80 L 10 40 Q 10 30, 20 30 Z" 
+            fill="white" opacity="0.95" transform="scale(1.5)"/>
+      <circle cx="60" cy="135" r="20" fill="white" opacity="0.95"/>
+      <circle cx="180" cy="135" r="20" fill="white" opacity="0.95"/>
+    </g>
+    
+    <!-- App name -->
+    <text x="0" y="80" font-family="-apple-system, system-ui, sans-serif" 
+          font-size="130" font-weight="700" fill="white" text-anchor="middle" 
+          letter-spacing="2">
+      TechRide
+    </text>
+    
+    <!-- Tagline -->
+    <text x="0" y="160" font-family="-apple-system, system-ui, sans-serif" 
+          font-size="44" font-weight="400" fill="white" text-anchor="middle" 
+          opacity="0.9">
+      Your Ride, Your Way
+    </text>
+  </g>
+  
+  <!-- Loading indicator dots (bottom) -->
+  <g transform="translate(621, 2200)">
+    <circle cx="-60" cy="0" r="12" fill="white" opacity="0.6"/>
+    <circle cx="0" cy="0" r="12" fill="white" opacity="0.8"/>
+    <circle cx="60" cy="0" r="12" fill="white" opacity="0.6"/>
+  </g>
+</svg>

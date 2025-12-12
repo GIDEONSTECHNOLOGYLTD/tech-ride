@@ -31,26 +31,8 @@ export default function WalletScreen() {
   };
 
   const handleTopUp = () => {
-    Alert.alert(
-      'Top Up Wallet',
-      'Choose amount to add to your wallet',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: '$10', onPress: () => topUpWallet(10) },
-        { text: '$25', onPress: () => topUpWallet(25) },
-        { text: '$50', onPress: () => topUpWallet(50) },
-      ]
-    );
-  };
-
-  const topUpWallet = async (amount: number) => {
-    try {
-      await userAPI.topupWallet(amount, 'CARD');
-      Alert.alert('Success', `$${amount} added to your wallet`);
-      loadWalletData();
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.error || 'Top-up failed');
-    }
+    // Navigate to dedicated top-up screen with payment options
+    navigation.navigate('WalletTopUp' as never);
   };
 
   if (loading) {
@@ -73,7 +55,7 @@ export default function WalletScreen() {
 
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Available Balance</Text>
-        <Text style={styles.balanceAmount}>${wallet?.balance?.toFixed(2) || '0.00'}</Text>
+        <Text style={styles.balanceAmount}>₦{wallet?.balance?.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</Text>
         <TouchableOpacity style={styles.topupButton} onPress={handleTopUp}>
           <Ionicons name="add-circle" size={20} color="#fff" />
           <Text style={styles.topupText}>Top Up</Text>
@@ -99,7 +81,7 @@ export default function WalletScreen() {
                 </Text>
               </View>
               <Text style={[styles.transactionAmount, txn.type === 'CREDIT' && { color: '#10B981' }]}>
-                {txn.type === 'DEBIT' ? '-' : '+'}${txn.amount.toFixed(2)}
+                {txn.type === 'DEBIT' ? '-' : '+'}₦{txn.amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
             </View>
           ))

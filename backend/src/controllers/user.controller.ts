@@ -189,8 +189,8 @@ export const topUpWallet = async (req: Request, res: Response) => {
     const userId = (req as any).user.userId;
     const { amount, method } = req.body;  // method: 'PAYSTACK' or 'CRYPTO'
 
-    if (!amount || amount < 100) {
-      return res.status(400).json({ error: 'Minimum top-up amount is ₦100' });
+    if (!amount || amount < 5) {
+      return res.status(400).json({ error: 'Minimum top-up amount is ₦5' });
     }
 
     const user = await User.findById(userId);

@@ -1,0 +1,57 @@
+<svg width="1242" height="2436" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="driverSplashGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00A843;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00C851;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ADE80;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1242" height="2436" fill="url(#driverSplashGrad)"/>
+  
+  <!-- Logo section (centered) -->
+  <g transform="translate(621, 1050)">
+    <!-- Steering wheel icon for splash -->
+    <g transform="translate(0, -140)">
+      <circle cx="0" cy="0" r="110" fill="none" stroke="white" 
+              stroke-width="30" opacity="0.95"/>
+      <line x1="-80" y1="0" x2="-30" y2="0" stroke="white" 
+            stroke-width="20" stroke-linecap="round" opacity="0.95"/>
+      <line x1="80" y1="0" x2="30" y2="0" stroke="white" 
+            stroke-width="20" stroke-linecap="round" opacity="0.95"/>
+      <line x1="0" y1="-80" x2="0" y2="-30" stroke="white" 
+            stroke-width="20" stroke-linecap="round" opacity="0.95"/>
+      <circle cx="0" cy="0" r="35" fill="white" opacity="0.95"/>
+    </g>
+    
+    <!-- App name -->
+    <text x="0" y="60" font-family="-apple-system, system-ui, sans-serif" 
+          font-size="130" font-weight="700" fill="white" text-anchor="middle" 
+          letter-spacing="2">
+      TechRide
+    </text>
+    
+    <!-- Driver label -->
+    <text x="0" y="140" font-family="-apple-system, system-ui, sans-serif" 
+          font-size="52" font-weight="600" fill="white" text-anchor="middle" 
+          opacity="0.95" letter-spacing="8">
+      DRIVER
+    </text>
+    
+    <!-- Tagline -->
+    <text x="0" y="210" font-family="-apple-system, system-ui, sans-serif" 
+          font-size="40" font-weight="400" fill="white" text-anchor="middle" 
+          opacity="0.85">
+      Drive. Earn. Succeed.
+    </text>
+  </g>
+  
+  <!-- Loading indicator dots (bottom) -->
+  <g transform="translate(621, 2200)">
+    <circle cx="-60" cy="0" r="12" fill="white" opacity="0.6"/>
+    <circle cx="0" cy="0" r="12" fill="white" opacity="0.8"/>
+    <circle cx="60" cy="0" r="12" fill="white" opacity="0.6"/>
+  </g>
+</svg>
