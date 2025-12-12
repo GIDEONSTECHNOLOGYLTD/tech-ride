@@ -19,9 +19,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
-    console.log('🌐 Full URL:', (config.baseURL || '') + (config.url || ''));
-    console.log('🌐 Headers:', config.headers);
+    
+    if (__DEV__) {
+      console.log('🌐 API Request:', config.method?.toUpperCase(), config.url);
+      console.log('🌐 Full URL:', (config.baseURL || '') + (config.url || ''));
+    }
+    
     return config;
   },
   (error) => {
@@ -34,12 +37,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Network error
+    if (!error.response) {
+      error.isNetworkError = true;
+      error.message = 'Network error. Please check your internet connection.';
+      return Promise.reject(error);
+    }
+
+    // Token expired or invalid
     if (error.response?.status === 401) {
-      // Token expired or invalid
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
-      // Navigate to login (handled by context)
+      
+      // Emit event for navigation (AuthContext will handle)
+      global.authExpired = true;
     }
+    
     return Promise.reject(error);
   }
 );

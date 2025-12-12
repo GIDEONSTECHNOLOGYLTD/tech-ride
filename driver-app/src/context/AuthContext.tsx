@@ -31,8 +31,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from storage on app start
     loadUser();
+    
+    // Check for auth expiry
+    const checkAuthInterval = setInterval(() => {
+      if ((global as any).authExpired) {
+        (global as any).authExpired = false;
+        logout();
+      }
+    }, 1000);
+    
+    return () => clearInterval(checkAuthInterval);
   }, []);
 
   const loadUser = async () => {
@@ -97,12 +106,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       socketService.disconnect();
       
       // Clear storage
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.multiRemove(['authToken', 'user', 'fcmToken']);
       
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
+      // Force clear even on error
+      setUser(null);
     }
   };
 

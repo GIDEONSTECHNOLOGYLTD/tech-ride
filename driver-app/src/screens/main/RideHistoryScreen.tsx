@@ -11,8 +11,19 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { driverAPI } from '../../services/api';
 import { format } from 'date-fns';
 
+interface Ride {
+  _id: string;
+  createdAt: string;
+  status: string;
+  pickupLocation: { address: string };
+  dropoffLocation: { address: string };
+  distance: number;
+  duration: number;
+  driverEarnings: number;
+}
+
 const RideHistoryScreen = () => {
-  const [rides, setRides] = useState([]);
+  const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -27,12 +38,12 @@ const RideHistoryScreen = () => {
     setLoading(true);
     try {
       const response = await driverAPI.getRideHistory(page);
-      const newRides = response.data.rides;
+      const newRides = response.data.rides || [];
       
       if (newRides.length === 0) {
         setHasMore(false);
       } else {
-        setRides([...rides, ...newRides]);
+        setRides(prevRides => [...prevRides, ...newRides]);
       }
     } catch (error: any) {
       console.error('Load rides error:', error);

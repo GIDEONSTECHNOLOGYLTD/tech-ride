@@ -33,6 +33,11 @@ const DashboardScreen = () => {
     } else {
       stopLocationTracking();
     }
+    
+    // Cleanup on unmount
+    return () => {
+      stopLocationTracking();
+    };
   }, [isOnline]);
 
   const loadData = async () => {
@@ -49,9 +54,15 @@ const DashboardScreen = () => {
   };
 
   const startLocationTracking = () => {
+    // Stop existing watch if any
+    if (locationWatchId !== null) {
+      clearLocationWatch(locationWatchId);
+    }
+    
     const watchId = watchLocation((location) => {
       // Update location via API
-      driverAPI.updateLocation(location.latitude, location.longitude, location.heading);
+      driverAPI.updateLocation(location.latitude, location.longitude, location.heading)
+        .catch(error => console.error('Location update error:', error));
       
       // Update via socket for real-time
       socketService.updateLocation(location.latitude, location.longitude, location.heading);
