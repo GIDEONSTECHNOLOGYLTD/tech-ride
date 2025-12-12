@@ -165,16 +165,16 @@ export const requestRide = async (req: Request, res: Response) => {
         await rideCheck.save();
         
         // Notify rider
-        io.to(`user_${userId}`).emit('ride-cancelled', {
-          rideId: ride._id,
+        io.to(`user_${rideCheck.riderId}`).emit('ride-cancelled', {
+          rideId: rideCheck._id,
           reason: 'No drivers available in your area. Please try again.',
         });
         
         // Refund if payment was made
-        if (paymentMethod === 'WALLET') {
-          const user = await User.findById(userId);
+        if (rideCheck.paymentMethod === 'WALLET') {
+          const user = await User.findById(rideCheck.riderId);
           if (user) {
-            user.walletBalance += estimatedFare;
+            user.walletBalance += rideCheck.estimatedFare;
             await user.save();
           }
         }
