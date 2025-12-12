@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { rideAPI } from '../services/api';
 import socketService from '../services/socket';
+import { getCurrentLocation } from '../utils/permissions';
 
 interface Ride {
   id: string;
@@ -95,7 +96,9 @@ export const RideProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentRide) return;
 
     try {
-      await rideAPI.startRide(currentRide.id);
+      // Get current location for geofence validation
+      const location = await getCurrentLocation();
+      await rideAPI.startRide(currentRide.id, location);
       setCurrentRide({ ...currentRide, status: 'IN_PROGRESS' });
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.error || 'Failed to start ride');
@@ -106,7 +109,14 @@ export const RideProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentRide) return;
 
     try {
-      await rideAPI.completeRide(currentRide.id, { actualDistance, actualDuration });
+      // Get current location for geofence validation
+      const location = await getCurrentLocation();
+      await rideAPI.completeRide(currentRide.id, { 
+        actualDistance, 
+        actualDuration,
+        driverLatitude: location.latitude,
+        driverLongitude: location.longitude,
+      });
       Alert.alert('Success', 'Ride completed successfully!');
       setCurrentRide(null);
     } catch (error: any) {

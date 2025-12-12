@@ -96,7 +96,11 @@ export const driverAPI = {
 // Ride API
 export const rideAPI = {
   acceptRide: (rideId: string) => api.post(`/rides/${rideId}/accept`),
-  startRide: (rideId: string) => api.post(`/rides/${rideId}/start`),
+  startRide: (rideId: string, location?: { latitude: number; longitude: number }) => 
+    api.post(`/rides/${rideId}/start`, { 
+      driverLatitude: location?.latitude, 
+      driverLongitude: location?.longitude 
+    }),
   completeRide: (rideId: string, data?: any) => api.post(`/rides/${rideId}/complete`, data),
   cancelRide: (rideId: string, reason: string) =>
     api.post(`/rides/${rideId}/cancel`, { reason }),

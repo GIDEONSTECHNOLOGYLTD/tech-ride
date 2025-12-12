@@ -156,6 +156,34 @@ export const requestRide = async (req: Request, res: Response) => {
       isApproved: true,
     }).limit(10);
 
+    // Notify nearby drivers via Socket.IO with 2-minute timeout
+    const rideTimeout = setTimeout(async () => {
+      const rideCheck = await Ride.findById(ride._id);
+      if (rideCheck && rideCheck.status === 'PENDING') {
+        rideCheck.status = 'CANCELLED';
+        rideCheck.cancellationReason = 'No driver available';
+        await rideCheck.save();
+        
+        // Notify rider
+        io.to(`user_${userId}`).emit('ride-cancelled', {
+          rideId: ride._id,
+          reason: 'No drivers available in your area. Please try again.',
+        });
+        
+        // Refund if payment was made
+        if (paymentMethod === 'WALLET') {
+          const user = await User.findById(userId);
+          if (user) {
+            user.walletBalance += estimatedFare;
+            await user.save();
+          }
+        }
+      }
+    }, 120000); // 2 minutes
+    
+    // Store timeout ID in ride metadata for cleanup
+    (ride as any).requestTimeout = rideTimeout;
+
     // Notify nearby drivers via Socket.IO
     nearbyDrivers.forEach((driver) => {
       io.to(`driver_${driver.userId}`).emit('new-ride-request', {
@@ -164,6 +192,7 @@ export const requestRide = async (req: Request, res: Response) => {
         dropoff: dropoffAddress,
         fare: finalFare,
         distance,
+        duration: estimatedDuration,
         vehicleType,
       });
 
@@ -289,8 +318,8 @@ export const startRide = async (req: Request, res: Response) => {
     if (driverLatitude && driverLongitude) {
       const driverLocation = { latitude: driverLatitude, longitude: driverLongitude };
       const pickupLocation = {
-        latitude: ride.pickup.coordinates[1],
-        longitude: ride.pickup.coordinates[0],
+        latitude: ride.pickupLocation.coordinates[1],
+        longitude: ride.pickupLocation.coordinates[0],
       };
 
       const dist = geoCalculateDistance(driverLocation, pickupLocation);
@@ -348,8 +377,8 @@ export const completeRide = async (req: Request, res: Response) => {
     if (driverLatitude && driverLongitude) {
       const driverLocation = { latitude: driverLatitude, longitude: driverLongitude };
       const dropoffLocation = {
-        latitude: ride.dropoff.coordinates[1],
-        longitude: ride.dropoff.coordinates[0],
+        latitude: ride.dropoffLocation.coordinates[1],
+        longitude: ride.dropoffLocation.coordinates[0],
       };
 
       const dist = geoCalculateDistance(driverLocation, dropoffLocation);
