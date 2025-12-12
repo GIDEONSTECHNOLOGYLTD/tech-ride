@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../context/AuthContext';
@@ -44,65 +45,72 @@ const LoginScreen = ({ navigation }: any) => {
       <View style={styles.content}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <Icon name="car" size={80} color="#00C851" />
-          <Text style={styles.title}>TechRide Driver</Text>
-          <Text style={styles.subtitle}>Welcome back!</Text>
-        </View>
-
-        {/* Form */}
-        <View style={styles.form}>
-          {/* Phone Input */}
-          <View style={styles.inputContainer}>
-            <Icon name="phone" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone Number"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              autoCapitalize="none"
+          {/* Header */}
+          <View style={styles.header}>
+            <Image 
+              source={require('../../../assets/icon.png')} 
+              style={styles.logo}
+              resizeMode="contain"
             />
+            <Text style={styles.title}>Welcome to TechRide</Text>
+            <Text style={styles.subtitle}>Driver App</Text>
           </View>
 
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Icon name="lock" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Icon
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color="#666"
-                style={styles.inputIcon}
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Phone Input */}
+            <View style={styles.inputContainer}>
+              <Icon name="phone" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
               />
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          {/* Login Button */}
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </TouchableOpacity>
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <Icon name="lock" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#666"
+                  style={styles.inputIcon}
+                />
+              </TouchableOpacity>
+            </View>
 
-          {/* Register Link */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.link}>Register as Driver</Text>
+            {/* Login Button */}
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.buttonText}>Login</Text>
+              )}
             </TouchableOpacity>
+
+            {/* Register Link */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.link}>Register as Driver</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -123,6 +131,15 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 50,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,

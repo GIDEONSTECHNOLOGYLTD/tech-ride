@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ScrollView, Keyboard, TouchableWithoutFeedback, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,7 +59,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
       <View style={styles.header}>
-        <Text style={styles.logo}>🚗</Text>
+        <Image 
+          source={require('../../assets/icon.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Login to continue</Text>
       </View>
@@ -149,7 +153,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   logo: {
-    fontSize: 60,
+    width: 100,
+    height: 100,
     marginBottom: 16,
   },
   title: {

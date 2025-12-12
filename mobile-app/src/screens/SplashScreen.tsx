@@ -29,7 +29,11 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>🚗</Text>
+      <Image 
+        source={require('../../assets/icon.png')} 
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={styles.title}>TechRide</Text>
       <Text style={styles.subtitle}>Your ride, your way</Text>
     </View>
@@ -44,7 +48,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#4F46E5',
   },
   logo: {
-    fontSize: 80,
+    width: 120,
+    height: 120,
     marginBottom: 20,
   },
   title: {
