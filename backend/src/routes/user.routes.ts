@@ -9,6 +9,7 @@ import {
   updateFCMToken,
   topUpWallet,
   verifyWalletTopUp,
+  getNearbyDrivers,
 } from '../controllers/user.controller';
 
 const router = express.Router();
@@ -29,5 +30,8 @@ router.patch('/notifications/:notificationId/read', markNotificationRead);
 
 // FCM Token (for push notifications)
 router.post('/fcm-token', updateFCMToken);
+
+// Nearby drivers (for riders)
+router.get('/nearby-drivers', getNearbyDrivers);
 
 export default router;

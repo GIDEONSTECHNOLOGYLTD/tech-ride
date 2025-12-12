@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
+import Driver from '../models/Driver';
 import Ride from '../models/Ride';
 import Payment from '../models/Payment';
 import Notification from '../models/Notification';
@@ -450,5 +451,46 @@ export const getReferralInfo = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get referral info error:', error);
     res.status(500).json({ error: 'Failed to get referral info', details: error.message });
+  }
+};
+
+export const getNearbyDrivers = async (req: Request, res: Response) => {
+  try {
+    const { latitude, longitude, radius = 5 } = req.query;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const lat = parseFloat(latitude as string);
+    const lng = parseFloat(longitude as string);
+    const radiusKm = parseFloat(radius as string);
+
+    // Find nearby online drivers using geospatial query
+    const drivers = await Driver.find({
+      currentLocation: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [lng, lat],
+          },
+          $maxDistance: radiusKm * 1000, // Convert km to meters
+        },
+      },
+      isOnline: true,
+      isAvailable: true,
+      isApproved: true,
+    })
+      .limit(20)
+      .populate('userId', 'firstName lastName phoneNumber rating profilePhoto');
+
+    res.json({
+      success: true,
+      drivers,
+      count: drivers.length,
+    });
+  } catch (error: any) {
+    console.error('Get nearby drivers error:', error);
+    res.status(500).json({ error: 'Failed to get nearby drivers', details: error.message });
   }
 };
