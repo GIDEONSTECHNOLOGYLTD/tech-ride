@@ -1,7 +1,9 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-// Get API key from environment variable or use placeholder
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
+const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.ios?.config?.googleMapsApiKey || 
+                             Constants.expoConfig?.android?.config?.googleMaps?.apiKey || 
+                             '';
 
 interface Coordinates {
   latitude: number;
